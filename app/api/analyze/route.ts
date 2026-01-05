@@ -101,7 +101,18 @@ export async function POST(request: Request) {
             console.log(`Fetched ${transfers.length} transactions (${outgoing.length} out, ${incoming.length} in).`);
         }
 
-        // Step 3: Ingest into Neo4j
+        // Step 3: Clear existing data and ingest into Neo4j (session already declared above)
+        console.log('Re-clearing database before ingest...');
+
+        try {
+            // Clear all existing nodes and relationships again to be safe
+            await session.run('MATCH (n) DETACH DELETE n');
+            console.log('Neo4j database cleared successfully.');
+        } catch (clearError) {
+            console.error('Warning: Failed to clear database:', clearError);
+            // Continue anyway - non-critical
+        }
+
         // Using a single transaction for efficiency
         const writeTx = session.beginTransaction();
 
@@ -113,6 +124,9 @@ export async function POST(request: Request) {
                 const asset = tx.asset;
                 const hash = tx.hash;
 
+                // Extract blockTimestamp from metadata
+                const blockTimestamp = tx.metadata?.blockTimestamp || new Date().toISOString();
+
                 // Skip transactions with null from or to addresses to prevent Neo4j errors.
                 if (!fromAddr || !toAddr) {
                     continue;
@@ -121,8 +135,8 @@ export async function POST(request: Request) {
                 const cypher = `
                 MERGE (sender:Wallet {address: $fromAddr})
                 MERGE (receiver:Wallet {address: $toAddr})
-                CREATE (t:Transaction {hash: $hash, value: $value, asset: $asset, timestamp: datetime()})
-                CREATE (sender)-[:SENT]->(t)-[:RECEIVED]->(receiver)
+                CREATE (t:Transaction {hash: $hash, value: $value, asset: $asset, blockTimestamp: $blockTimestamp})
+                CREATE (sender)-[:SENT {blockTimestamp: $blockTimestamp}]->(t)-[:RECEIVED {blockTimestamp: $blockTimestamp}]->(receiver)
             `;
 
                 await writeTx.run(cypher, {
@@ -130,7 +144,8 @@ export async function POST(request: Request) {
                     toAddr,
                     hash,
                     value: value || 0,
-                    asset: asset || 'ETH'
+                    asset: asset || 'ETH',
+                    blockTimestamp
                 });
             }
 

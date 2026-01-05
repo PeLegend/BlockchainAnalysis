@@ -16,7 +16,7 @@ export async function GET() {
     try {
         const result = await session.run(`
       MATCH (n)
-      OPTIONAL MATCH (n)-[r]-(m)
+      OPTIONAL MATCH (n)-[r]->(m)
       RETURN n, r, m
     `);
 
@@ -39,22 +39,42 @@ export async function GET() {
 
             const nId = getId(n);
             if (nId && !nodesMap.has(nId)) {
-                nodesMap.set(nId, {
+                const nodeData: any = {
                     id: nId,
                     group: n.labels[0] || 'Unknown',
                     ...n.properties,
-                });
+                };
+
+                // Extract timestamp and metadata for risk scoring
+                if (n.properties.blockTimestamp) {
+                    nodeData.timestamp = n.properties.blockTimestamp;
+                    nodeData.metadata = {
+                        blockTimestamp: n.properties.blockTimestamp
+                    };
+                }
+
+                nodesMap.set(nId, nodeData);
             }
 
             // Process target node if it exists
             if (m) {
                 const mId = getId(m);
                 if (mId && !nodesMap.has(mId)) {
-                    nodesMap.set(mId, {
+                    const nodeData: any = {
                         id: mId,
                         group: m.labels[0] || 'Unknown',
                         ...m.properties,
-                    });
+                    };
+
+                    // Extract timestamp and metadata for risk scoring
+                    if (m.properties.blockTimestamp) {
+                        nodeData.timestamp = m.properties.blockTimestamp;
+                        nodeData.metadata = {
+                            blockTimestamp: m.properties.blockTimestamp
+                        };
+                    }
+
+                    nodesMap.set(mId, nodeData);
                 }
             }
 
@@ -62,12 +82,22 @@ export async function GET() {
             if (r) {
                 const rId = r.elementId || r.identity.toString();
                 if (!linksMap.has(rId)) {
-                    linksMap.set(rId, {
+                    const linkData: any = {
                         source: getId(n),
                         target: getId(m),
                         type: r.type,
                         ...r.properties,
-                    });
+                    };
+
+                    // Extract timestamp and metadata from relationship for risk scoring
+                    if (r.properties.blockTimestamp) {
+                        linkData.timestamp = r.properties.blockTimestamp;
+                        linkData.metadata = {
+                            blockTimestamp: r.properties.blockTimestamp
+                        };
+                    }
+
+                    linksMap.set(rId, linkData);
                 }
             }
         });

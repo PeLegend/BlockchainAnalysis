@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
+import { calculateRiskScores } from '../../utils/riskScoring';
 
 // Dynamically import ForceGraph2D with no SSR
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -34,6 +35,8 @@ interface GraphNode {
     x?: number;
     y?: number;
     timestamp?: number;
+    riskScore?: number;
+    riskReasons?: string[];
     [key: string]: any;
 }
 
@@ -261,6 +264,41 @@ export default function GraphPage() {
                     }
                 });
 
+                // Apply Risk Scoring (External Utility)
+                const riskResults = calculateRiskScores(processedNodes, graphData.links);
+                console.log("[PAGE] Risk Calculation Complete. Map Size:", riskResults.size);
+                if (riskResults.size > 0) {
+                    const firstKey = riskResults.keys().next().value;
+                    console.log("[PAGE] First Risk Key:", firstKey, "Data:", riskResults.get(firstKey));
+                }
+
+                // Merge Risk Results into Nodes
+                console.log('[PAGE] Merging risk scores into nodes...');
+                let nodesWithRisk = 0;
+                let nodesWithoutRisk = 0;
+
+                processedNodes.forEach((node: GraphNode) => {
+                    const risk = riskResults.get(node.id.toLowerCase());
+                    if (risk) {
+                        // Always assign if exists, even if 0, to track 'checked' status
+                        node.riskScore = Math.min(risk.score, 100);
+                        node.riskReasons = Array.from(risk.reasons);
+                        nodesWithRisk++;
+                    } else {
+                        // No risk data - assign 0 (safe)
+                        node.riskScore = 0;
+                        node.riskReasons = [];
+                        nodesWithoutRisk++;
+
+                        // Log nodes that should have risk but don't (Wallets only)
+                        if (node.group === 'Wallet') {
+                            console.log(`[PAGE] Warning: Wallet ${node.id} has no risk data`);
+                        }
+                    }
+                });
+
+                console.log(`[PAGE] Nodes with risk: ${nodesWithRisk}, without risk: ${nodesWithoutRisk}`);
+
                 const newData = { nodes: processedNodes, links: graphData.links };
                 setData(newData);
 
@@ -380,11 +418,39 @@ export default function GraphPage() {
                 ctx.fill();
             }
         } else {
-            // Standard Circle
+            // Standard Circle - Default color based on group
             ctx.fillStyle = NODE_COLORS[node.group] || '#9CA3AF';
 
-            // Neon Glow for "Active" nodes (e.g., Exchanges)
-            if (node.group === 'Exchange') {
+            // Risk-based Color Override (More granular)
+            // Risk-based Color Override
+            if (node.riskScore !== undefined && node.riskScore > 0) {
+                if (node.group === 'Transaction') {
+                    // Distinct Scale for Transactions (Purple/Pink) to avoid confusion with Wallets
+                    if (node.riskScore >= 80) {
+                        ctx.fillStyle = '#D946EF'; // [80-100] Fuchsia-500 (Critical Tx)
+                    } else if (node.riskScore >= 50) {
+                        ctx.fillStyle = '#A855F7'; // [50-79] Purple-500 (High-Med Tx)
+                    } else {
+                        ctx.fillStyle = '#C084FC'; // [1-49] Purple-400 (Low Tx)
+                    }
+                } else {
+                    // Standard Wallet Scale (Cold-to-Hot)
+                    if (node.riskScore >= 80) {
+                        ctx.fillStyle = '#EF4444'; // [80-100] Critical (Red-500)
+                    } else if (node.riskScore >= 60) {
+                        ctx.fillStyle = '#F97316'; // [60-79] High (Orange-500)
+                    } else if (node.riskScore >= 40) {
+                        ctx.fillStyle = '#EAB308'; // [40-59] Medium (Yellow-500)
+                    } else if (node.riskScore >= 20) {
+                        ctx.fillStyle = '#06B6D4'; // [20-39] Low (Cyan-500)
+                    } else {
+                        ctx.fillStyle = '#3B82F6'; // [1-19] Very Low (Blue-500)
+                    }
+                }
+            }
+
+            // Neon Glow for high-risk nodes
+            if (node.riskScore && node.riskScore >= 40) {
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = ctx.fillStyle;
             }
@@ -396,15 +462,18 @@ export default function GraphPage() {
             ctx.shadowBlur = 0; // Reset
         }
 
-        // Label on 'Exchange' or high value nodes constantly, others on hover logic handled by library tooltip usually, but we can draw names
+
+        // Label on 'Exchange' or high value nodes - show tag outside
         if (node.group === 'Exchange' && globalScale > 1.5) {
             ctx.font = `bold ${fontSize}px Sans-Serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.fillText(node.tag || '', x, y + size + 2);
-            ctx.fillText(node.tag || '', x, y + size + 2);
-        } else if (node.group === 'Transaction') {
+        }
+
+        // Draw labels INSIDE nodes
+        if (node.group === 'Transaction') {
             const val = Number(node.value || 0);
             const asset = node.asset || 'ETH';
             const price = PRICE_MAP[asset.toUpperCase()] || 0;
@@ -436,8 +505,8 @@ export default function GraphPage() {
             ctx.textBaseline = 'middle';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.fillText(label, x, y);
-        } else if (node.group !== 'Exchange' && node.group !== 'Transaction' && globalScale > 1.5) {
-            // Draw first 6 chars of ID for Wallets INSIDE the node
+        } else if (node.group === 'Wallet' || (node.group !== 'Exchange' && node.group !== 'Transaction')) {
+            // Draw first 6 chars of ID for ALL Wallets INSIDE the node
             const label = node.id.slice(0, 6);
             // Use size-based font so it scales WITH the node (always fits inside)
             ctx.font = `${size / 1.5}px monospace`;
@@ -562,15 +631,56 @@ export default function GraphPage() {
             `;
                         }
 
-                        // Default tooltip for wallets/exchanges
+                        // Default tooltip for wallets/exchanges with RISK DISPLAY
                         const label = node.tag || node.id;
                         const sub = node.group === 'Exchange' ? 'Exchange Entity' : 'Wallet Address';
                         const color = node.group === 'Exchange' ? 'text-amber-400' : 'text-blue-400';
 
+                        // Risk Section (ALWAYS SHOW)
+                        const score = node.riskScore || 0;
+                        let riskLevel = 'SAFE';
+                        let riskColor = 'text-green-500';
+                        let riskBg = 'bg-green-500/10 border-green-500/30';
+
+                        if (score >= 100) {
+                            riskLevel = 'CRITICAL';
+                            riskColor = 'text-red-500';
+                            riskBg = 'bg-red-500/10 border-red-500/30';
+                        } else if (score >= 50) {
+                            riskLevel = 'HIGH';
+                            riskColor = 'text-orange-500';
+                            riskBg = 'bg-orange-500/10 border-orange-500/30';
+                        } else if (score > 0) {
+                            riskLevel = 'MODERATE';
+                            riskColor = 'text-yellow-400';
+                            riskBg = 'bg-yellow-500/10 border-yellow-500/30';
+                        }
+
+                        const reasons = node.riskReasons && node.riskReasons.length > 0
+                            ? node.riskReasons.map((r: string) => `<div class="flex items-start gap-1"><span class="mt-1 w-1 h-1 rounded-full bg-current opacity-70"></span><span>${r}</span></div>`).join('')
+                            : '<div class="opacity-50 italic">No anomalies detected</div>';
+
+                        const riskHtml = `
+                            <div class="mt-3 pt-2 border-t border-gray-700/50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="text-xs font-bold text-gray-400 tracking-wider">RISK SCORE</div>
+                                    <div class="px-2 py-0.5 rounded text-[10px] font-bold border ${riskBg} ${riskColor}">
+                                        ${score}/100 • ${riskLevel}
+                                    </div>
+                                </div>
+                                <div class="text-gray-400 text-[10px] font-mono leading-relaxed max-w-[200px]">
+                                    ${reasons}
+                                </div>
+                            </div>
+                        `;
+
                         return `
-            <div class="px-3 py-2 bg-[#0a0a14]/95 border border-gray-700 rounded-lg shadow-xl backdrop-blur-md z-50">
-                <div class="${color} font-bold text-xs tracking-wider mb-0.5">${sub.toUpperCase()}</div>
-                <div class="text-white text-sm font-medium">${label}</div>
+            <div class="px-4 py-3 bg-[#0a0a14]/95 border border-gray-700/80 rounded-xl shadow-2xl backdrop-blur-md z-50 min-w-[240px]">
+                <div class="${color} font-bold text-xs tracking-wider mb-1 flex items-center gap-2">
+                    ${sub.toUpperCase()}
+                </div>
+                <div class="text-white text-sm font-medium break-all text-wrap font-mono mb-1">${label}</div>
+                ${riskHtml}
             </div>
             `;
                     }}
