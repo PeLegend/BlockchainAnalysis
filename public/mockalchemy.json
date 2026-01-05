@@ -1,0 +1,384 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "transfers": [
+            {
+                "blockNum": "0xf00001",
+                "uniqueId": "0xTxHash_Start:log:01",
+                "hash": "0xTxHash_Start_The_Heist",
+                "from": "0xVictim_Vault_Protocol",
+                "to": "0xHacker_Main_Wallet",
+                "value": 1000.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:00:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00002",
+                "uniqueId": "0xTxHash_Smurf1:log:01",
+                "hash": "0xTxHash_Smurf_01",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_A",
+                "value": 200.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:15:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00002",
+                "uniqueId": "0xTxHash_Smurf2:log:01",
+                "hash": "0xTxHash_Smurf_02",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_B",
+                "value": 200.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:16:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00002",
+                "uniqueId": "0xTxHash_Smurf3:log:01",
+                "hash": "0xTxHash_Smurf_03",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_C",
+                "value": 200.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:17:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00002",
+                "uniqueId": "0xTxHash_Smurf4:log:01",
+                "hash": "0xTxHash_Smurf_04",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_D",
+                "value": 200.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:18:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00002",
+                "uniqueId": "0xTxHash_Smurf5:log:01",
+                "hash": "0xTxHash_Smurf_05",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_E",
+                "value": 190.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:20:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00003",
+                "uniqueId": "0xTxHash_Smurf6:log:01",
+                "hash": "0xTxHash_Smurf_06",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_F",
+                "value": 200.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:21:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00003",
+                "uniqueId": "0xTxHash_Smurf7:log:01",
+                "hash": "0xTxHash_Smurf_07",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_G",
+                "value": 200.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:22:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00003",
+                "uniqueId": "0xTxHash_Smurf8:log:01",
+                "hash": "0xTxHash_Smurf_08",
+                "from": "0xHacker_Main_Wallet",
+                "to": "0xMule_Account_H",
+                "value": 200.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T10:23:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00005",
+                "uniqueId": "0xTxHash_Layering1:log:01",
+                "hash": "0xTxHash_Hop_A_to_Target",
+                "from": "0xMule_Account_A",
+                "to": "0xBlacklist_Exchange_X",
+                "value": 198.5,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T12:00:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00006",
+                "uniqueId": "0xTxHash_Layering2:log:01",
+                "hash": "0xTxHash_Hop_B_to_Mixer",
+                "from": "0xMule_Account_B",
+                "to": "0xTornado_Cash_Router",
+                "value": 199.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T12:05:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00007",
+                "uniqueId": "0xTxHash_TokenTransfer:log:01",
+                "hash": "0xTxHash_USDT_Transfer",
+                "from": "0xMule_Account_C",
+                "to": "0xUnknown_Wallet_99",
+                "value": 50000.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "USDT",
+                "category": "erc20",
+                "rawContract": {
+                    "address": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+                },
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T12:10:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00010",
+                "uniqueId": "0xTxHash_Agg1:log:01",
+                "hash": "0xTxHash_FanIn_01",
+                "from": "0xMule_Account_D",
+                "to": "0xBoss_Wallet_Aggregator",
+                "value": 199.5,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T13:00:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00010",
+                "uniqueId": "0xTxHash_Agg2:log:01",
+                "hash": "0xTxHash_FanIn_02",
+                "from": "0xMule_Account_E",
+                "to": "0xBoss_Wallet_Aggregator",
+                "value": 189.5,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T13:05:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00010",
+                "uniqueId": "0xTxHash_Agg3:log:01",
+                "hash": "0xTxHash_FanIn_03",
+                "from": "0xMule_Account_F",
+                "to": "0xBoss_Wallet_Aggregator",
+                "value": 199.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T13:10:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00010",
+                "uniqueId": "0xTxHash_Agg4:log:01",
+                "hash": "0xTxHash_FanIn_04",
+                "from": "0xMule_Account_G",
+                "to": "0xBoss_Wallet_Aggregator",
+                "value": 199.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T13:15:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00010",
+                "uniqueId": "0xTxHash_Agg5:log:01",
+                "hash": "0xTxHash_FanIn_05",
+                "from": "0xMule_Account_H",
+                "to": "0xBoss_Wallet_Aggregator",
+                "value": 199.0,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T13:20:00.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00008",
+                "uniqueId": "0xTxHash_Spam1:log:01",
+                "hash": "0xTxHash_Spam_01",
+                "from": "0xSpam_Bot_Account",
+                "to": "0xRandom_Victim_01",
+                "value": 0.001,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T14:00:01.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00008",
+                "uniqueId": "0xTxHash_Spam2:log:01",
+                "hash": "0xTxHash_Spam_02",
+                "from": "0xSpam_Bot_Account",
+                "to": "0xRandom_Victim_02",
+                "value": 0.001,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T14:00:02.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00008",
+                "uniqueId": "0xTxHash_Spam3:log:01",
+                "hash": "0xTxHash_Spam_03",
+                "from": "0xSpam_Bot_Account",
+                "to": "0xRandom_Victim_03",
+                "value": 0.001,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T14:00:03.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00008",
+                "uniqueId": "0xTxHash_Spam4:log:01",
+                "hash": "0xTxHash_Spam_04",
+                "from": "0xSpam_Bot_Account",
+                "to": "0xRandom_Victim_04",
+                "value": 0.001,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T14:00:04.000Z"
+                }
+            },
+            {
+                "blockNum": "0xf00008",
+                "uniqueId": "0xTxHash_Spam5:log:01",
+                "hash": "0xTxHash_Spam_05",
+                "from": "0xSpam_Bot_Account",
+                "to": "0xRandom_Victim_05",
+                "value": 0.001,
+                "erc721TokenId": null,
+                "erc1155Metadata": [],
+                "tokenId": null,
+                "asset": "ETH",
+                "category": "external",
+                "rawContract": {},
+                "metadata": {
+                    "blockTimestamp": "2024-01-01T14:00:05.000Z"
+                }
+            }
+        ]
+    }
+}

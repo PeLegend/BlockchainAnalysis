@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import neo4j from 'neo4j-driver';
+import fs from 'fs';
+import path from 'path';
 
 const ALCHEMY_API_URL = process.env.ALCHEMY_API_URL;
 const NEO4J_URI = process.env.NEO4J_URI;
@@ -17,13 +19,15 @@ export async function POST(request: Request) {
     const session = driver.session();
 
     try {
-        const { address } = await request.json();
+        const body = await request.json();
+        const { address, useMock } = body;
 
-        if (!address) {
+        // If using mock, address is optional (or can be ignored), otherwise it's required
+        if (!useMock && !address) {
             return NextResponse.json({ error: 'Address is required' }, { status: 400 });
         }
 
-        if (!ALCHEMY_API_URL) {
+        if (!useMock && !ALCHEMY_API_URL) {
             return NextResponse.json({ error: 'Server configuration error: ALCHEMY_API_URL missing' }, { status: 500 });
         }
 
@@ -31,46 +35,71 @@ export async function POST(request: Request) {
         await session.run('MATCH (n) DETACH DELETE n');
         console.log('Database cleared.');
 
-        // Helper function to fetch transfers with pagination
-        const fetchTransfers = async (addr: string, direction: 'in' | 'out') => {
-            let pageKey = null;
-            let all: any[] = [];
+        let transfers: any[] = [];
 
-            do {
-                const res: any = await axios.post(ALCHEMY_API_URL, {
-                    jsonrpc: '2.0',
-                    id: 1,
-                    method: 'alchemy_getAssetTransfers',
-                    params: [{
-                        fromBlock: '0x0',
-                        toBlock: 'latest',
-                        ...(direction === 'out' && { fromAddress: addr }),
-                        ...(direction === 'in' && { toAddress: addr }),
-                        category: ['external', 'erc20'],
-                        withMetadata: true,
-                        excludeZeroValue: true,
-                        pageKey: pageKey ? pageKey : undefined
-                    }]
-                });
+        if (useMock) {
+            console.log('Using mock data...');
+            try {
+                const mockPath = path.join(process.cwd(), 'public', 'mockalchemy.json');
+                const fileContent = fs.readFileSync(mockPath, 'utf-8');
+                const mockData = JSON.parse(fileContent);
 
-                if (res.data.error) {
-                    throw new Error(res.data.error.message);
+                if (mockData.result && mockData.result.transfers) {
+                    transfers = mockData.result.transfers;
+                } else {
+                    console.warn("Mock data structure invalid, looking for 'transfers' array.");
+                    return NextResponse.json({ error: 'Invalid mock data structure' }, { status: 500 });
                 }
 
-                const result = res.data.result;
-                all.push(...result.transfers);
-                pageKey = result.pageKey;
-            } while (pageKey);
+                console.log(`Loaded ${transfers.length} transactions from mock data.`);
 
-            return all;
-        };
+            } catch (err: any) {
+                console.error("Failed to load mock data:", err);
+                return NextResponse.json({ error: `Failed to load mock data: ${err.message}` }, { status: 500 });
+            }
 
-        // Fetch both outgoing and incoming transactions
-        const outgoing = await fetchTransfers(address, 'out');
-        const incoming = await fetchTransfers(address, 'in');
-        const transfers = [...outgoing, ...incoming];
+        } else {
+            // Helper function to fetch transfers with pagination
+            const fetchTransfers = async (addr: string, direction: 'in' | 'out') => {
+                let pageKey = null;
+                let all: any[] = [];
 
-        console.log(`Fetched ${transfers.length} transactions (${outgoing.length} out, ${incoming.length} in).`);
+                do {
+                    const res: any = await axios.post(ALCHEMY_API_URL!, {
+                        jsonrpc: '2.0',
+                        id: 1,
+                        method: 'alchemy_getAssetTransfers',
+                        params: [{
+                            fromBlock: '0x0',
+                            toBlock: 'latest',
+                            ...(direction === 'out' && { fromAddress: addr }),
+                            ...(direction === 'in' && { toAddress: addr }),
+                            category: ['external', 'erc20'],
+                            withMetadata: true,
+                            excludeZeroValue: true,
+                            pageKey: pageKey ? pageKey : undefined
+                        }]
+                    });
+
+                    if (res.data.error) {
+                        throw new Error(res.data.error.message);
+                    }
+
+                    const result = res.data.result;
+                    all.push(...result.transfers);
+                    pageKey = result.pageKey;
+                } while (pageKey);
+
+                return all;
+            };
+
+            // Fetch both outgoing and incoming transactions
+            const outgoing = await fetchTransfers(address, 'out');
+            const incoming = await fetchTransfers(address, 'in');
+            transfers = [...outgoing, ...incoming];
+
+            console.log(`Fetched ${transfers.length} transactions (${outgoing.length} out, ${incoming.length} in).`);
+        }
 
         // Step 3: Ingest into Neo4j
         // Using a single transaction for efficiency

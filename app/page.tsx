@@ -5,6 +5,7 @@ import axios from 'axios';
 
 export default function Home() {
   const [address, setAddress] = useState('0x59981d20880Ef2209bB587A624787D02aa059574');
+  const [useMock, setUseMock] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; count: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +16,7 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await axios.post('/api/analyze', { address });
+      const response = await axios.post('/api/analyze', { address, useMock });
       setResult(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || 'An unexpected error occurred');
@@ -38,9 +39,24 @@ export default function Home() {
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            disabled={useMock}
+            className={`w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${useMock ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             placeholder="0x..."
           />
+        </div>
+
+        <div className="mb-6 flex items-center">
+          <input
+            id="useMock"
+            type="checkbox"
+            checked={useMock}
+            onChange={(e) => setUseMock(e.target.checked)}
+            className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-600 ring-offset-gray-800 focus:ring-2"
+          />
+          <label htmlFor="useMock" className="ml-2 text-sm font-medium text-gray-300">
+            Use Mock Data (Testing)
+          </label>
         </div>
 
         <button
