@@ -83,6 +83,7 @@ export default function GraphPage() {
     const [timeRange, setTimeRange] = useState<[string, string]>(['Nov 2024', 'May 2025']);
     const [timeRangeIdx, setTimeRangeIdx] = useState<[number, number]>([0, 100]);
     const [histogramData, setHistogramData] = useState<number[]>([]);
+    const [dataRange, setDataRange] = useState<[number, number]>([0, 0]);
 
     // Timeline View State
     const [timelineView, setTimelineView] = useState<'YEAR' | 'MONTH'>('YEAR');
@@ -188,12 +189,18 @@ export default function GraphPage() {
             return;
         }
 
-        // 2. Determine Range (Mock: Last 2 Years fixed)
-        const NOW = Date.now();
-        const TWO_YEARS = 2 * 365 * 24 * 60 * 60 * 1000;
-        const start = NOW - TWO_YEARS;
-        const end = NOW;
+        // 2. Determine Range from State (or fallback to basic logical range if state not ready)
+        let start = dataRange[0];
+        let end = dataRange[1];
+
+        if (start === 0 && end === 0) {
+            const NOW = Date.now();
+            start = NOW - (365 * 24 * 60 * 60 * 1000);
+            end = NOW;
+        }
+
         const range = end - start;
+        if (range <= 0) return; // Avoid divide by zero
 
         // 3. Create Bins (Fit to screen -> ~200 bins for smooth look)
         const binCount = 200;
@@ -214,7 +221,7 @@ export default function GraphPage() {
 
         setHistogramData(normalized);
 
-    }, [data]);
+    }, [data, dataRange]);
 
     // --- Effects ---
     useEffect(() => {
@@ -253,16 +260,53 @@ export default function GraphPage() {
                     return node;
                 });
 
-                // MOCK TIMESTAMPS (For demonstration until API provides them)
-                // Assign random timestamp within last 2 years (approx) for Transactions
-                const NOW = Date.now();
-                const TWO_YEARS = 2 * 365 * 24 * 60 * 60 * 1000;
+                // Correctly parse timestamps from data
                 processedNodes.forEach((node: GraphNode) => {
-                    if (node.group === 'Transaction') {
-                        // Random time between now and 2 years ago
-                        node.timestamp = NOW - Math.random() * TWO_YEARS;
+                    // If node comes from API/Neo4j, it might have 'timestamp' or 'metadata.blockTimestamp'
+                    // We want node.timestamp to be a NUMBER (ms)
+                    let rawTime = node.timestamp || node.metadata?.blockTimestamp;
+
+                    if (rawTime) {
+                        // Attempt to parse ISO string or use number
+                        const parsed = new Date(rawTime).getTime();
+                        if (!isNaN(parsed)) {
+                            node.timestamp = parsed;
+                        } else {
+                            // Fallback if valid time exists but parse fails
+                            node.timestamp = Date.now();
+                        }
+                    } else if (node.group === 'Transaction') {
+                        // Only fallback to NOW if absolutely no data found for a Transaction
+                        // (Ideally we shouldn't have this if data is good)
+                        node.timestamp = Date.now();
                     }
                 });
+
+                // Calculate Data Range for Timeline
+                const times = processedNodes
+                    .map((n: GraphNode) => n.timestamp)
+                    .filter((t: number | undefined): t is number => typeof t === 'number' && t > 0);
+
+                let minTime = Date.now();
+                let maxTime = Date.now();
+
+                if (times.length > 0) {
+                    minTime = Math.min(...times);
+                    maxTime = Math.max(...times);
+                    // Add some buffer (e.g. 1 week before/after)
+                    const buffer = 7 * 24 * 60 * 60 * 1000;
+                    minTime -= buffer;
+                    maxTime += buffer;
+                } else {
+                    // Default to 1 year range if no data
+                    minTime = Date.now() - 365 * 24 * 60 * 60 * 1000;
+                }
+
+                // Save range to state
+                setDataRange([minTime, maxTime]);
+
+                // We will handle the Histogram range update in the useEffect that depends on [data] (lines 181+)
+
 
                 // Apply Risk Scoring (External Utility)
                 const riskResults = calculateRiskScores(processedNodes, graphData.links);
@@ -348,12 +392,12 @@ export default function GraphPage() {
             const usdVal = val * price;
 
             // Filter: Time Range (Synced with Timeline)
-            // Range is last 2 years
             if (node.timestamp) {
-                const NOW = Date.now();
-                const TWO_YEARS = 2 * 365 * 24 * 60 * 60 * 1000;
-                const totalStart = NOW - TWO_YEARS;
-                const rangeDuration = TWO_YEARS;
+                const totalStart = dataRange[0];
+                const totalEnd = dataRange[1];
+                const rangeDuration = totalEnd - totalStart;
+
+                if (rangeDuration <= 0) return true; // Safety
 
                 // timeRangeIdx is [0, 100] percentages
                 const filterStart = totalStart + (rangeDuration * (timeRangeIdx[0] / 100));
@@ -384,7 +428,7 @@ export default function GraphPage() {
         });
 
         return { nodes: filteredNodes, links: filteredLinks };
-    }, [data, minUSD, hideUnknown, timeRangeIdx]);
+    }, [data, minUSD, hideUnknown, timeRangeIdx, dataRange]);
 
     // --- Renderers ---
     const drawNode = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
@@ -617,6 +661,11 @@ export default function GraphPage() {
                                 ? `$${usdVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 : 'Unknown Price';
 
+                            // Format Timestamp
+                            const dateObj = node.timestamp ? new Date(node.timestamp) : null;
+                            const dateStr = dateObj ? dateObj.toLocaleDateString() : '';
+                            const timeStr = dateObj ? dateObj.toLocaleTimeString() : '';
+
                             return `
             <div class="px-3 py-2 bg-[#0a0a14]/95 border border-green-500/30 rounded-lg shadow-2xl backdrop-blur-md z-50">
                 <div class="text-green-400 font-bold text-xs tracking-wider mb-1">TRANSACTION VALUE</div>
@@ -627,6 +676,12 @@ export default function GraphPage() {
                     <span>${val} ${asset}</span>
                     <span class="opacity-50">${node.id.slice(0, 6)}...</span>
                 </div>
+                ${dateObj ? `
+                <div class="mt-2 text-gray-400 text-[10px] font-mono border-t border-gray-700/50 pt-1 flex justify-between uppercase tracking-wider">
+                    <span>${dateStr}</span>
+                    <span>${timeStr}</span>
+                </div>
+                ` : ''}
             </div>
             `;
                         }
@@ -713,10 +768,12 @@ export default function GraphPage() {
                     className="w-full h-16 bg-[#0a0a14]/90 backdrop-blur-md border-t border-gray-800 relative pointer-events-auto overflow-hidden group select-none"
                 >
 
-                    {/* View Controls (Optional - maybe hidden for 'Fit to Screen' simplicity or kept for aesthetics) */}
+                    {/* View Controls */}
                     <div className="absolute top-1 left-2 z-20 flex gap-2 w-full pointer-events-none">
                         <div className="text-[10px] text-gray-500 font-mono self-center bg-[#050510]/50 px-2 rounded">
-                            RANGE: <span className="text-gray-300 font-bold">Past 2 Years</span>
+                            RANGE: <span className="text-gray-300 font-bold">
+                                {dataRange[0] > 0 ? `${new Date(dataRange[0]).toLocaleDateString()} - ${new Date(dataRange[1]).toLocaleDateString()}` : 'Loading...'}
+                            </span>
                         </div>
                     </div>
 
@@ -745,11 +802,11 @@ export default function GraphPage() {
                         {/* Timeline Labels */}
                         <div className="absolute bottom-0 w-full flex justify-between px-8 text-[10px] text-gray-500 font-mono py-1 uppercase tracking-widest select-none">
                             {timelineView === 'YEAR' ? (
-                                // Dynamic Labels for Last 2 Years
+                                // Dynamic Labels based on dataRange
                                 <>
-                                    <span>2 Years Ago</span>
-                                    <span>1 Year Ago</span>
-                                    <span>Now</span>
+                                    <span>{dataRange[0] > 0 ? new Date(dataRange[0]).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : ''}</span>
+                                    <span>{dataRange[0] > 0 ? new Date((dataRange[0] + dataRange[1]) / 2).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : ''}</span>
+                                    <span>{dataRange[1] > 0 ? new Date(dataRange[1]).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : ''}</span>
                                 </>
                             ) : (
                                 // Month View Mock Labels

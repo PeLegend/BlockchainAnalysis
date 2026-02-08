@@ -5,14 +5,14 @@
 
 // --- Constants ---
 export const RISK_RULES = {
-    BLACKLIST: 70,    // ลดจาก 100 → 70
-    SMURFING: 70,     // ลดจาก 40 → 25
-    HIGH_FREQ: 10     // ลดจาก 20 → 10
+    BLACKLIST: 70,    // 100 → 70
+    SMURFING: 70,     // 40 → 25
+    HIGH_FREQ: 20     // 20 → 10
 };
 
-// Thresholds (เข้มงวดขึ้นเล็กน้อย)
-const FAN_THRESHOLD = 5;        // ≥ 5 unique (User requested > 4)
-const BURST_THRESHOLD = 5;      // เพิ่มจาก 5 → 7 (ต้องมี ≥ 7 tx ใน 1 นาที)
+// Thresholds
+const FAN_THRESHOLD = 4;        // ≥ 5 unique (User requested > 4)
+const BURST_THRESHOLD = 4;      // เพิ่มจาก 5 → 7 (ต้องมี ≥ 7 tx ใน 1 นาที)
 const BURST_WINDOW_MS = 60_000;
 
 export const BLACKLIST_ADDRESSES = new Set(
@@ -54,7 +54,7 @@ export function calculateRiskScores(
     console.log('--- RISK SCORING START ---');
     console.log('Input Nodes:', nodes.length);
     console.log('Input Links:', links.length);
-
+    6
     // --- Node Maps ---
     const nodeMap = new Map(
         nodes.map(n => [String(n.id).toLowerCase(), n])
