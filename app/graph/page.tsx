@@ -70,6 +70,12 @@ const ShareIcon = () => (
     </svg>
 );
 
+const ShieldExclamationIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+);
+
 export default function GraphPage() {
     // --- State ---
     const [data, setData] = useState<{ nodes: GraphNode[], links: GraphLink[] }>({ nodes: [], links: [] });
@@ -88,6 +94,13 @@ export default function GraphPage() {
     // Timeline View State
     const [timelineView, setTimelineView] = useState<'YEAR' | 'MONTH'>('YEAR');
     const [selectedDate, setSelectedDate] = useState<string>('2025');
+
+    // Blacklist State
+    const [blacklistAddresses, setBlacklistAddresses] = useState<string[]>([]);
+    const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+    const [showBlacklistModal, setShowBlacklistModal] = useState(false);
+    const [blacklistNote, setBlacklistNote] = useState('');
+    const [isAddingToBlacklist, setIsAddingToBlacklist] = useState(false);
 
     const graphRef = useRef<any>(null);
     const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -178,6 +191,99 @@ export default function GraphPage() {
         });
     };
 
+    // Handle adding address to blacklist
+    const handleAddToBlacklist = async () => {
+        if (!selectedNode || selectedNode.group === 'Transaction') return;
+
+        setIsAddingToBlacklist(true);
+        try {
+            await axios.post('/api/blacklist', {
+                address: selectedNode.id,
+                note: blacklistNote
+            });
+
+            // Add to local state
+            const newBlacklist = [...blacklistAddresses, selectedNode.id.toLowerCase()];
+            setBlacklistAddresses(newBlacklist);
+
+            // Recalculate risk scores with new blacklist
+            const riskResults = calculateRiskScores(data.nodes, data.links, newBlacklist);
+
+            // Update nodes IN-PLACE to preserve x,y positions (don't create new objects)
+            data.nodes.forEach(node => {
+                const risk = riskResults.get(node.id.toLowerCase());
+                if (risk) {
+                    node.riskScore = Math.min(risk.score, 100);
+                    node.riskReasons = Array.from(risk.reasons);
+                }
+            });
+
+            // Trigger re-render with same node references
+            setData({ nodes: [...data.nodes], links: data.links });
+            setShowBlacklistModal(false);
+            setBlacklistNote('');
+            setSelectedNode(null);
+
+            console.log('[BLACKLIST] Added:', selectedNode.id);
+        } catch (err: any) {
+            console.error('Failed to add to blacklist:', err);
+            alert(err.response?.data?.error || 'Failed to add to blacklist');
+        } finally {
+            setIsAddingToBlacklist(false);
+        }
+    };
+
+    // Handle removing address from blacklist
+    const handleRemoveFromBlacklist = async () => {
+        if (!selectedNode || selectedNode.group === 'Transaction') return;
+
+        setIsAddingToBlacklist(true);
+        try {
+            await axios.delete(`/api/blacklist?address=${encodeURIComponent(selectedNode.id)}`);
+
+            // Remove from local state
+            const newBlacklist = blacklistAddresses.filter(
+                addr => addr.toLowerCase() !== selectedNode.id.toLowerCase()
+            );
+            setBlacklistAddresses(newBlacklist);
+
+            // Recalculate risk scores with updated blacklist
+            const riskResults = calculateRiskScores(data.nodes, data.links, newBlacklist);
+
+            // Update nodes IN-PLACE to preserve positions
+            data.nodes.forEach(node => {
+                const risk = riskResults.get(node.id.toLowerCase());
+                if (risk) {
+                    node.riskScore = Math.min(risk.score, 100);
+                    node.riskReasons = Array.from(risk.reasons);
+                } else {
+                    node.riskScore = 0;
+                    node.riskReasons = [];
+                }
+            });
+
+            // Trigger re-render
+            setData({ nodes: [...data.nodes], links: data.links });
+            setShowBlacklistModal(false);
+            setSelectedNode(null);
+
+            console.log('[BLACKLIST] Removed:', selectedNode.id);
+        } catch (err: any) {
+            console.error('Failed to remove from blacklist:', err);
+            alert(err.response?.data?.error || 'Failed to remove from blacklist');
+        } finally {
+            setIsAddingToBlacklist(false);
+        }
+    };
+
+    // Handle node click to show blacklist option
+    const handleNodeClick = useCallback((node: GraphNode) => {
+        if (node.group !== 'Transaction') {
+            setSelectedNode(node);
+            setShowBlacklistModal(true);
+        }
+    }, []);
+
     // Generate Histogram Data Dependent on Actual Graph Data
     useEffect(() => {
         if (!data.nodes.length) return;
@@ -227,14 +333,20 @@ export default function GraphPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch data in parallel
-                const [graphResponse, tagsResponse] = await axios.all([
+                // Fetch data in parallel (including blacklist)
+                const [graphResponse, tagsResponse, blacklistResponse] = await axios.all([
                     axios.get('/api/graph'),
-                    axios.get('/csvjson.json') // Using this for tagging
+                    axios.get('/csvjson.json'), // Using this for tagging
+                    axios.get('/api/blacklist')
                 ]);
 
                 const graphData = graphResponse.data;
                 const tagsData = tagsResponse.data as any[];
+
+                // Store blacklist addresses
+                const fetchedBlacklist = (blacklistResponse.data.blacklist || []).map((b: any) => b.address);
+                setBlacklistAddresses(fetchedBlacklist);
+                console.log('[PAGE] Loaded blacklist:', fetchedBlacklist.length, 'addresses');
 
                 // Process Nodes
                 const processedNodes = graphData.nodes.map((node: GraphNode) => {
@@ -308,8 +420,8 @@ export default function GraphPage() {
                 // We will handle the Histogram range update in the useEffect that depends on [data] (lines 181+)
 
 
-                // Apply Risk Scoring (External Utility)
-                const riskResults = calculateRiskScores(processedNodes, graphData.links);
+                // Apply Risk Scoring (External Utility) - with dynamic blacklist
+                const riskResults = calculateRiskScores(processedNodes, graphData.links, fetchedBlacklist);
                 console.log("[PAGE] Risk Calculation Complete. Map Size:", riskResults.size);
                 if (riskResults.size > 0) {
                     const firstKey = riskResults.keys().next().value;
@@ -755,7 +867,7 @@ export default function GraphPage() {
                         return link.type === 'SENT' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)';
                     }}
                     linkWidth={1}
-
+                    onNodeClick={(node: any) => handleNodeClick(node as GraphNode)}
                 />
             )}
 
@@ -848,6 +960,119 @@ export default function GraphPage() {
                     </div>
                 </div>
             </div>
+
+            {/* --- BLACKLIST MODAL --- */}
+            {showBlacklistModal && selectedNode && (() => {
+                const isInBlacklist = blacklistAddresses.some(
+                    addr => addr.toLowerCase() === selectedNode.id.toLowerCase()
+                );
+
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <div className={`bg-[#0a0a14] border ${isInBlacklist ? 'border-green-500/30' : 'border-red-500/30'} rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw]`}>
+
+                            {/* Header */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className={`w-10 h-10 rounded-full ${isInBlacklist ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} flex items-center justify-center`}>
+                                    <ShieldExclamationIcon />
+                                </div>
+                                <div>
+                                    <h3 className="text-white font-bold text-lg">
+                                        {isInBlacklist ? 'Remove from Blacklist' : 'Add to Blacklist'}
+                                    </h3>
+                                    <p className="text-gray-400 text-xs">
+                                        {isInBlacklist ? 'This address is currently blacklisted' : 'Mark this address as risky'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Address Display */}
+                            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 mb-4">
+                                <div className="text-gray-400 text-[10px] tracking-wider mb-1">WALLET ADDRESS</div>
+                                <div className="text-white font-mono text-sm break-all">{selectedNode.id}</div>
+                                {selectedNode.tag && (
+                                    <div className="mt-2 text-amber-400 text-xs">
+                                        Tag: {selectedNode.tag}
+                                    </div>
+                                )}
+                                {isInBlacklist && (
+                                    <div className="mt-2 px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded inline-block">
+                                        ⚠ Currently Blacklisted
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Note Input - Only show for adding */}
+                            {!isInBlacklist && (
+                                <div className="mb-4">
+                                    <label className="text-gray-400 text-xs block mb-2">Note (optional)</label>
+                                    <input
+                                        type="text"
+                                        value={blacklistNote}
+                                        onChange={(e) => setBlacklistNote(e.target.value)}
+                                        placeholder="e.g., Known scam wallet, Phishing..."
+                                        className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red-500/50 transition-colors"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Warning/Info */}
+                            <div className={`${isInBlacklist ? 'bg-green-500/10 border-green-500/20 text-green-300' : 'bg-red-500/10 border-red-500/20 text-red-300'} border rounded-lg p-3 mb-4 text-xs`}>
+                                {isInBlacklist ? (
+                                    <><strong>Info:</strong> Removing this address will recalculate risk scores for all connected addresses.</>
+                                ) : (
+                                    <><strong>Warning:</strong> Adding this address to the blacklist will mark it as high-risk (100 score) and propagate risk to connected addresses.</>
+                                )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowBlacklistModal(false);
+                                        setSelectedNode(null);
+                                        setBlacklistNote('');
+                                    }}
+                                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                {isInBlacklist ? (
+                                    <button
+                                        onClick={handleRemoveFromBlacklist}
+                                        disabled={isAddingToBlacklist}
+                                        className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {isAddingToBlacklist ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                Removing...
+                                            </>
+                                        ) : (
+                                            <>Remove from Blacklist</>
+                                        )}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleAddToBlacklist}
+                                        disabled={isAddingToBlacklist}
+                                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {isAddingToBlacklist ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                Adding...
+                                            </>
+                                        ) : (
+                                            <>Add to Blacklist</>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
         </main>
     );

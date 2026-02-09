@@ -15,7 +15,8 @@ const FAN_THRESHOLD = 4;        // ≥ 5 unique (User requested > 4)
 const BURST_THRESHOLD = 4;      // เพิ่มจาก 5 → 7 (ต้องมี ≥ 7 tx ใน 1 นาที)
 const BURST_WINDOW_MS = 60_000;
 
-export const BLACKLIST_ADDRESSES = new Set(
+// Default hardcoded blacklist (fallback)
+export const DEFAULT_BLACKLIST_ADDRESSES = new Set(
     [
         '0xBlacklist_Exchange_X',
         '0xBlacklist_Exchange_Y',
@@ -23,6 +24,9 @@ export const BLACKLIST_ADDRESSES = new Set(
         '0x1234567890123456789012345678901234567890'
     ].map(a => a.toLowerCase())
 );
+
+// Legacy export for backward compatibility
+export const BLACKLIST_ADDRESSES = DEFAULT_BLACKLIST_ADDRESSES;
 
 // --- Interfaces ---
 export interface RiskAnalysisNode {
@@ -48,8 +52,21 @@ export interface RiskResult {
 
 export function calculateRiskScores(
     nodes: RiskAnalysisNode[],
-    links: RiskAnalysisLink[]
+    links: RiskAnalysisLink[],
+    blacklistAddresses?: Set<string> | string[]
 ): Map<string, RiskResult> {
+
+    // Prepare blacklist set (normalize to lowercase)
+    let activeBlacklist: Set<string>;
+    if (blacklistAddresses) {
+        if (blacklistAddresses instanceof Set) {
+            activeBlacklist = new Set([...blacklistAddresses].map(a => a.toLowerCase()));
+        } else {
+            activeBlacklist = new Set(blacklistAddresses.map(a => a.toLowerCase()));
+        }
+    } else {
+        activeBlacklist = DEFAULT_BLACKLIST_ADDRESSES;
+    }
 
     console.log('--- RISK SCORING START ---');
     console.log('Input Nodes:', nodes.length);
@@ -163,7 +180,7 @@ export function calculateRiskScores(
 
     // --- Analyze Nodes (Direct Checks) ---
     nodeMap.forEach((_, id) => {
-        if (BLACKLIST_ADDRESSES.has(id)) {
+        if (activeBlacklist.has(id)) {
             console.log(`[BLACKLIST] Node ${id} is explicitly blacklisted`);
             const risk = getRisk(id);
             risk.score = 100; // Force max score
@@ -179,13 +196,13 @@ export function calculateRiskScores(
         // RULE 1: Blacklist
         // DEBUG LOGGING
         // console.log(`Checking transfer: ${tx.from} -> ${tx.to}`);
-        if (BLACKLIST_ADDRESSES.has(tx.to) || tx.to.includes('blacklist')) {
+        if (activeBlacklist.has(tx.to) || tx.to.includes('blacklist')) {
             console.log(`[BLACKLIST] ${tx.from} -> ${tx.to} (Target is Blacklisted)`);
             fromRisk.score = 100;
             fromRisk.reasons.add('Transfer to Blacklist');
         }
 
-        if (BLACKLIST_ADDRESSES.has(tx.from)) {
+        if (activeBlacklist.has(tx.from)) {
             console.log(`[BLACKLIST] ${tx.from} (Blacklisted sender) -> ${tx.to}`);
             toRisk.score += RISK_RULES.BLACKLIST;
             toRisk.reasons.add('Received from Blacklist');
