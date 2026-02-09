@@ -102,6 +102,20 @@ export default function GraphPage() {
     const [blacklistNote, setBlacklistNote] = useState('');
     const [isAddingToBlacklist, setIsAddingToBlacklist] = useState(false);
 
+    // Path Discovery State
+    const [startWallet, setStartWallet] = useState('');
+    const [endWallet, setEndWallet] = useState('');
+    const [pathResult, setPathResult] = useState<{
+        found: boolean;
+        hops: number;
+        path: string[];
+        nodes: any[];
+        links: any[];
+        message?: string;
+    } | null>(null);
+    const [isSearchingPath, setIsSearchingPath] = useState(false);
+    const [pathNodeIds, setPathNodeIds] = useState<Set<string>>(new Set());
+
     const graphRef = useRef<any>(null);
     const timelineContainerRef = useRef<HTMLDivElement>(null);
     const dragState = useRef<{
@@ -284,6 +298,69 @@ export default function GraphPage() {
         }
     }, []);
 
+    // Handle Path Discovery Search
+    const handleFindPath = async () => {
+        if (!startWallet || !endWallet) {
+            alert('Please enter both wallet addresses');
+            return;
+        }
+
+        setIsSearchingPath(true);
+        setPathResult(null);
+        setPathNodeIds(new Set());
+
+        try {
+            const response = await axios.post('/api/path', {
+                startAddress: startWallet,
+                endAddress: endWallet
+            });
+
+            const result = response.data;
+            setPathResult(result);
+
+            if (result.found && result.path) {
+                // Set path node IDs for highlighting
+                setPathNodeIds(new Set(result.path.map((addr: string) => addr.toLowerCase())));
+
+                // Merge path nodes/links into existing data if they're not already there
+                const existingNodeIds = new Set(data.nodes.map(n => n.id.toLowerCase()));
+                const newNodes = result.nodes.filter((n: any) => !existingNodeIds.has(n.id.toLowerCase()));
+
+                if (newNodes.length > 0) {
+                    setData(prev => ({
+                        nodes: [...prev.nodes, ...newNodes],
+                        links: [...prev.links, ...result.links]
+                    }));
+                }
+
+                // Zoom to fit path
+                setTimeout(() => graphRef.current?.zoomToFit(500, 50), 300);
+            }
+
+            console.log('[PATH] Result:', result);
+        } catch (err: any) {
+            console.error('[PATH] Error:', err);
+            setPathResult({
+                found: false,
+                hops: 0,
+                path: [],
+                nodes: [],
+                links: [],
+                message: err.response?.data?.error || 'Failed to search path'
+            });
+        } finally {
+            setIsSearchingPath(false);
+        }
+    };
+
+    // Clear path results
+    const handleClearPath = () => {
+        setPathResult(null);
+        setPathNodeIds(new Set());
+        setStartWallet('');
+        setEndWallet('');
+    };
+
     // Generate Histogram Data Dependent on Actual Graph Data
     useEffect(() => {
         if (!data.nodes.length) return;
@@ -425,7 +502,9 @@ export default function GraphPage() {
                 console.log("[PAGE] Risk Calculation Complete. Map Size:", riskResults.size);
                 if (riskResults.size > 0) {
                     const firstKey = riskResults.keys().next().value;
-                    console.log("[PAGE] First Risk Key:", firstKey, "Data:", riskResults.get(firstKey));
+                    if (firstKey) {
+                        console.log("[PAGE] First Risk Key:", firstKey, "Data:", riskResults.get(firstKey));
+                    }
                 }
 
                 // Merge Risk Results into Nodes
@@ -577,9 +656,16 @@ export default function GraphPage() {
             // Standard Circle - Default color based on group
             ctx.fillStyle = NODE_COLORS[node.group] || '#9CA3AF';
 
-            // Risk-based Color Override (More granular)
-            // Risk-based Color Override
-            if (node.riskScore !== undefined && node.riskScore > 0) {
+            // PATH HIGHLIGHTING - Override color if node is in active path
+            const isInPath = pathNodeIds.has(node.id.toLowerCase());
+            if (isInPath) {
+                ctx.fillStyle = '#22C55E'; // Green-500 for path nodes
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#22C55E';
+            }
+
+            // Risk-based Color Override (only if NOT in path)
+            else if (node.riskScore !== undefined && node.riskScore > 0) {
                 if (node.group === 'Transaction') {
                     // Distinct Scale for Transactions (Purple/Pink) to avoid confusion with Wallets
                     if (node.riskScore >= 80) {
@@ -671,7 +757,7 @@ export default function GraphPage() {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.fillText(label, x, y);
         }
-    }, [images]);
+    }, [images, pathNodeIds]);
 
     return (
         <main className="relative w-full h-screen bg-[#050510] text-gray-100 overflow-hidden font-sans selection:bg-blue-500/30">
@@ -682,20 +768,76 @@ export default function GraphPage() {
 
                     {/* Left Controls */}
                     <div className="flex flex-col gap-4 pointer-events-auto">
-                        <div className="flex items-center gap-2">
-                            <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-sm text-xs font-bold tracking-wider transition-colors shadow-lg shadow-blue-900/40 clip-path-slant">
-                                MORE INFO &gt;
-                            </button>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                    <SearchIcon />
-                                </div>
+                        {/* Path Discovery Section */}
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 font-bold">PATH FINDER</span>
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Search"
-                                    className="bg-gray-800/80 backdrop-blur-md border border-gray-700 text-sm rounded-full pl-10 pr-4 py-1.5 w-64 focus:outline-none focus:border-blue-500 transition-colors text-gray-300 placeholder-gray-500"
+                                    placeholder="Start Wallet (0x...)"
+                                    value={startWallet}
+                                    onChange={(e) => setStartWallet(e.target.value)}
+                                    className="bg-gray-800/80 backdrop-blur-md border border-gray-700 text-xs rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:border-green-500 transition-colors text-gray-300 placeholder-gray-500 font-mono"
                                 />
+                                <span className="text-gray-500">→</span>
+                                <input
+                                    type="text"
+                                    placeholder="End Wallet (0x...)"
+                                    value={endWallet}
+                                    onChange={(e) => setEndWallet(e.target.value)}
+                                    className="bg-gray-800/80 backdrop-blur-md border border-gray-700 text-xs rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:border-green-500 transition-colors text-gray-300 placeholder-gray-500 font-mono"
+                                />
+                                <button
+                                    onClick={handleFindPath}
+                                    disabled={isSearchingPath || !startWallet || !endWallet}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${isSearchingPath || !startWallet || !endWallet
+                                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                        : 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/40'
+                                        }`}
+                                >
+                                    {isSearchingPath ? '🔄 Searching...' : '🔍 Find Path'}
+                                </button>
+                                {pathResult && (
+                                    <button
+                                        onClick={handleClearPath}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all"
+                                    >
+                                        ✕ Clear
+                                    </button>
+                                )}
                             </div>
+                            {/* Path Result Panel */}
+                            {pathResult && (
+                                <div className={`mt-2 p-3 rounded-lg border ${pathResult.found
+                                    ? 'bg-green-900/30 border-green-500/50'
+                                    : 'bg-red-900/30 border-red-500/50'
+                                    }`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-sm font-bold ${pathResult.found ? 'text-green-400' : 'text-red-400'}`}>
+                                            {pathResult.found ? `✓ Connected (${pathResult.hops} Hop${pathResult.hops > 1 ? 's' : ''})` : '✗ Not Connected'}
+                                        </span>
+                                    </div>
+                                    {pathResult.found && pathResult.path.length > 0 && (
+                                        <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
+                                            {pathResult.path.map((addr, idx) => (
+                                                <span key={addr} className="flex items-center gap-1">
+                                                    <span className="px-2 py-0.5 bg-gray-800 rounded text-gray-300">
+                                                        {addr.slice(0, 6)}...{addr.slice(-4)}
+                                                    </span>
+                                                    {idx < pathResult.path.length - 1 && (
+                                                        <span className="text-green-400">→</span>
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {pathResult.message && !pathResult.found && (
+                                        <p className="text-xs text-gray-400">{pathResult.message}</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Filter Chips */}
