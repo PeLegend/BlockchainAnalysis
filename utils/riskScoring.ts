@@ -18,10 +18,10 @@ const BURST_WINDOW_MS = 60_000;
 // Default hardcoded blacklist (fallback)
 export const DEFAULT_BLACKLIST_ADDRESSES = new Set(
     [
-        '0xBlacklist_Exchange_X',
-        '0xBlacklist_Exchange_Y',
-        '0xTornado_Cash_Router',
-        '0x1234567890123456789012345678901234567890'
+        'Test',
+        // '0xBlacklist_Exchange_Y',
+        // '0xTornado_Cash_Router',
+        // '0x1234567890123456789012345678901234567890'
     ].map(a => a.toLowerCase())
 );
 
@@ -196,11 +196,13 @@ export function calculateRiskScores(
         // RULE 1: Blacklist
         // DEBUG LOGGING
         // console.log(`Checking transfer: ${tx.from} -> ${tx.to}`);
-        if (activeBlacklist.has(tx.to) || tx.to.includes('blacklist')) {
-            console.log(`[BLACKLIST] ${tx.from} -> ${tx.to} (Target is Blacklisted)`);
-            fromRisk.score = 100;
-            fromRisk.reasons.add('Transfer to Blacklist');
-        }
+
+
+        // if (activeBlacklist.has(tx.to) || tx.to.includes('blacklist')) {
+        //     console.log(`[BLACKLIST] ${tx.from} -> ${tx.to} (Target is Blacklisted)`);
+        //     fromRisk.score = 100;
+        //     fromRisk.reasons.add('Transfer to Blacklist');
+        // }
 
         if (activeBlacklist.has(tx.from)) {
             console.log(`[BLACKLIST] ${tx.from} (Blacklisted sender) -> ${tx.to}`);
