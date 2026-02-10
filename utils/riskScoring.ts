@@ -288,7 +288,7 @@ export function calculateRiskScores(
     // Use snapshots to prevent feedback loops and ensure same-layer nodes get equal propagation
     console.log('Applying Risk Propagation (snapshot-based)...');
 
-    const PROPAGATION_TO_SENDER = 0.2p; // 10% of destination risk (ลดจาก 20%)
+    const PROPAGATION_TO_SENDER = 0.20; // 10% of destination risk (ลดจาก 20%)
     const PROPAGATION_TO_TX = 0.15;     // 8% of destination risk (ลดจาก 15%)
     const MAX_ROUNDS = 3; // Propagate up to 3 hops
 
