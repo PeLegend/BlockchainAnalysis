@@ -5,7 +5,7 @@
 
 // --- Constants ---
 export const RISK_RULES = {
-    BLACKLIST: 70,    // 100 → 70
+    BLACKLIST: 100,    // 100 → 70
     SMURFING: 70,     // 40 → 25
     HIGH_FREQ: 20     // 20 → 10
 };
