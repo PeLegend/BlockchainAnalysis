@@ -115,6 +115,7 @@ export default function GraphPage() {
     } | null>(null);
     const [isSearchingPath, setIsSearchingPath] = useState(false);
     const [pathNodeIds, setPathNodeIds] = useState<Set<string>>(new Set());
+    const [pathLinks, setPathLinks] = useState<any[]>([]);
 
     const graphRef = useRef<any>(null);
     const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -308,6 +309,7 @@ export default function GraphPage() {
         setIsSearchingPath(true);
         setPathResult(null);
         setPathNodeIds(new Set());
+        setPathLinks([]);
 
         try {
             const response = await axios.post('/api/path', {
@@ -321,6 +323,9 @@ export default function GraphPage() {
             if (result.found && result.path) {
                 // Set path node IDs for highlighting
                 setPathNodeIds(new Set(result.path.map((addr: string) => addr.toLowerCase())));
+
+                // Store path links for rendering values
+                setPathLinks(result.links || []);
 
                 // Merge path nodes/links into existing data if they're not already there
                 const existingNodeIds = new Set(data.nodes.map(n => n.id.toLowerCase()));
@@ -357,6 +362,7 @@ export default function GraphPage() {
     const handleClearPath = () => {
         setPathResult(null);
         setPathNodeIds(new Set());
+        setPathLinks([]);
         setStartWallet('');
         setEndWallet('');
     };
@@ -715,7 +721,10 @@ export default function GraphPage() {
         }
 
         // Draw labels INSIDE nodes
-        if (node.group === 'Transaction') {
+        // Path nodes should always show address (wallet ID prefix)
+        const isInPath = pathNodeIds.has(node.id.toLowerCase());
+
+        if (node.group === 'Transaction' && !isInPath) {
             const val = Number(node.value || 0);
             const asset = node.asset || 'ETH';
             const price = PRICE_MAP[asset.toUpperCase()] || 0;
@@ -747,8 +756,8 @@ export default function GraphPage() {
             ctx.textBaseline = 'middle';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.fillText(label, x, y);
-        } else if (node.group === 'Wallet' || (node.group !== 'Exchange' && node.group !== 'Transaction')) {
-            // Draw first 6 chars of ID for ALL Wallets INSIDE the node
+        } else {
+            // Draw first 6 chars of ID for ALL Wallets and Path nodes INSIDE the node
             const label = node.id.slice(0, 6);
             // Use size-based font so it scales WITH the node (always fits inside)
             ctx.font = `${size / 1.5}px monospace`;
@@ -1006,9 +1015,74 @@ export default function GraphPage() {
                     linkDirectionalParticleSpeed={0.005} // Slow, elegant flow
 
                     linkColor={(link: any) => {
+                        // Check if this link is a path link
+                        if (link.type === 'path') {
+                            return 'rgba(34, 197, 94, 0.8)'; // Green for path links
+                        }
                         return link.type === 'SENT' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)';
                     }}
-                    linkWidth={1}
+                    linkWidth={(link: any) => {
+                        // Make path links thicker
+                        return link.type === 'path' ? 2 : 1;
+                    }}
+                    linkCanvasObjectMode={() => 'after'}
+                    linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                        // Only draw label for path links
+                        if (link.type !== 'path') return;
+
+                        const sourceNode = typeof link.source === 'object' ? link.source : null;
+                        const targetNode = typeof link.target === 'object' ? link.target : null;
+
+                        if (!sourceNode || !targetNode || !sourceNode.x || !targetNode.x) return;
+
+                        // Calculate middle point of link
+                        const midX = (sourceNode.x + targetNode.x) / 2;
+                        const midY = (sourceNode.y + targetNode.y) / 2;
+
+                        // Format value
+                        const val = Number(link.value || 0);
+                        const asset = link.asset || 'ETH';
+                        const price = PRICE_MAP[asset.toUpperCase()] || 0;
+                        const usdVal = val * price;
+
+                        let label = '';
+                        if (price > 0) {
+                            if (usdVal >= 1000) {
+                                label = '$' + (usdVal / 1000).toFixed(1) + 'k';
+                            } else if (usdVal >= 1) {
+                                label = '$' + usdVal.toFixed(0);
+                            } else if (usdVal > 0) {
+                                label = '$' + usdVal.toFixed(2);
+                            }
+                        }
+
+                        if (!label && val > 0) {
+                            // Show raw value if no USD conversion
+                            label = val.toFixed(4) + ' ' + asset;
+                        }
+
+                        if (!label) return; // No value to show
+
+                        const fontSize = 10 / globalScale;
+                        ctx.font = `bold ${fontSize}px monospace`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        // Draw background box
+                        const textWidth = ctx.measureText(label).width;
+                        const padding = 2 / globalScale;
+                        ctx.fillStyle = 'rgba(5, 5, 16, 0.9)';
+                        ctx.fillRect(
+                            midX - textWidth / 2 - padding,
+                            midY - fontSize / 2 - padding,
+                            textWidth + padding * 2,
+                            fontSize + padding * 2
+                        );
+
+                        // Draw text
+                        ctx.fillStyle = '#22C55E'; // Green text
+                        ctx.fillText(label, midX, midY);
+                    }}
                     onNodeClick={(node: any) => handleNodeClick(node as GraphNode)}
                 />
             )}

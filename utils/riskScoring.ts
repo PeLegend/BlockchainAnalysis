@@ -5,7 +5,7 @@
 
 // --- Constants ---
 export const RISK_RULES = {
-    BLACKLIST: 70,    // 100 → 70
+    BLACKLIST: 100,    // 100 → 70
     SMURFING: 70,     // 40 → 25
     HIGH_FREQ: 20     // 20 → 10
 };
@@ -255,13 +255,50 @@ export function calculateRiskScores(
     //     }
     // });
 
-    console.log('Checking Fan-in patterns...');
+    // RULE 2: Fan-in (Smurfing) with Time Window
+    // Fixed: Merchants receive many txs over time. Smurfing usually happens in a short burst.
+    // Check if unique senders >= THRESHOLD within a specific time window (e.g., 60 mins)
+    const SMURF_WINDOW_MS = 60 * 60 * 1000; // 60 minutes
+
     incoming.forEach((senders, receiver) => {
-        if (senders.size >= FAN_THRESHOLD) {
-            console.log(`[SMURFING] ${receiver} has fan-in from ${senders.size} senders`);
+        // Optimization: Quick skip if total senders < threshold
+        if (senders.size < FAN_THRESHOLD) return;
+
+        // Get all incoming transfers for this receiver
+        const incomingTxs = transfers.filter(tx => tx.to === receiver && tx.time > 0);
+        if (incomingTxs.length < FAN_THRESHOLD) return;
+
+        // Sort by time
+        incomingTxs.sort((a, b) => a.time - b.time);
+
+        let isSmurfing = false;
+        let maxUniqueSendersInWindow = 0;
+
+        // Sliding window check
+        for (let i = 0; i < incomingTxs.length; i++) {
+            const windowStart = incomingTxs[i].time;
+            const windowEnd = windowStart + SMURF_WINDOW_MS;
+
+            // Count unique senders in this window
+            const uniqueSendersInWindow = new Set<string>();
+
+            for (let j = i; j < incomingTxs.length; j++) {
+                if (incomingTxs[j].time > windowEnd) break;
+                uniqueSendersInWindow.add(incomingTxs[j].from);
+            }
+
+            if (uniqueSendersInWindow.size >= FAN_THRESHOLD) {
+                isSmurfing = true;
+                maxUniqueSendersInWindow = uniqueSendersInWindow.size;
+                break;
+            }
+        }
+
+        if (isSmurfing) {
+            console.log(`[SMURFING] ${receiver} has fan-in from ${maxUniqueSendersInWindow} unique senders within ${SMURF_WINDOW_MS / 60000} mins`);
             const risk = getRisk(receiver);
             risk.score += RISK_RULES.SMURFING;
-            risk.reasons.add(`Fan-in ≥ ${FAN_THRESHOLD}`);
+            risk.reasons.add(`Fan-in (Smurfing) ≥ ${FAN_THRESHOLD} within 1h`);
         }
     });
 
@@ -288,8 +325,8 @@ export function calculateRiskScores(
     // Use snapshots to prevent feedback loops and ensure same-layer nodes get equal propagation
     console.log('Applying Risk Propagation (snapshot-based)...');
 
-    const PROPAGATION_TO_SENDER = 0.10; // 10% of destination risk (ลดจาก 20%)
-    const PROPAGATION_TO_TX = 0.08;     // 8% of destination risk (ลดจาก 15%)
+    const PROPAGATION_TO_SENDER = 0.2; // 10% of destination risk (ลดจาก 20%)
+    const PROPAGATION_TO_TX = 0.15;     // 8% of destination risk (ลดจาก 15%)
     const MAX_ROUNDS = 3; // Propagate up to 3 hops
 
     for (let round = 0; round < MAX_ROUNDS; round++) {
