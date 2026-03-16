@@ -1,0 +1,26 @@
+flowchart TD
+    %% --- การทำงานหลักแบบย่อ ---
+    Input["1. รับข้อมูล Target Wallet Address<br/>และเลือกโหมด (Real / Mock)"] 
+    --> API_Fetch["2. ดึงข้อมูลธุรกรรมจาก Alchemy API<br/>หรือไฟล์ Mock Data"]
+    
+    API_Fetch --> Neo4j["3. นำเข้าข้อมูล (Ingestion)<br/>สร้าง Node และ Edge ใน Neo4j"]
+    
+    Neo4j --> RiskAnalysis["4. ระบบวิเคราะห์ความเสี่ยง (Risk Scoring)"]
+    
+    subgraph Analysis ["ขั้นตอนวิเคราะห์ความเสี่ยง (Backend)"]
+        RiskAnalysis --> Rules["4.1 ตรวจสอบกฎความเสี่ยง:<br/>- Blacklist (100 คะแนน)<br/>- Fan-in / Smurfing (70 คะแนน)<br/>- High Frequency (20 คะแนน)"]
+        Rules --> Propagation["4.2 กระจายคะแนนความเสี่ยง (Risk Propagation)<br/>ไปยังกระเป๋าที่เชื่อมต่อ (สูงสุด 3 Hops)"]
+    end
+    
+    Propagation --> GraphView["5. แสดงผลกราฟเครือข่าย 3 มิติ<br/>ไฮไลต์สี Node ตามระดับความเสี่ยง"]
+    
+    GraphView --> UserInteract{"6. การใช้งานเพิ่มเติม"}
+    
+    UserInteract -- "คลิกดูข้อมูล" --> Details["ดูรายละเอียด Wallet / Transaction"]
+    UserInteract -- "วิเคราะห์เส้นทาง" --> Pathfinding["ค้นหาเส้นทางสั้นที่สุดระหว่าง 2 กระเป๋า"]
+    UserInteract -- "จัดการข้อมูล" --> Blacklist["เพิ่ม/ลด บัญชีดำ (Blacklist)"]
+    
+    classDef default fill:#f9fafb,stroke:#d1d5db,stroke-width:2px,color:#1f2937;
+    classDef process fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a;
+    
+    class API_Fetch,Neo4j,Analysis process;

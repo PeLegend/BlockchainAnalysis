@@ -1,0 +1,36 @@
+graph TD
+    User["User / Client Browser"]
+    
+    subgraph Frontend ["Next.js Client (React)"]
+        UI["Graph Visualization <br> (react-force-graph-2d)"]
+        RiskEngine["Risk Scoring Engine <br> (Client-side Logic)"]
+        State["State Management <br> (Filters, Blacklist, Path)"]
+    end
+    subgraph Backend ["Next.js API Routes"]
+        API_Analyze["/api/analyze <br> Data Ingestion"]
+        API_Graph["/api/graph <br> Data Retrieval"]
+        API_Blacklist["/api/blacklist <br> Management"]
+        API_Path["/api/path <br> Pathfinding"]
+    end
+    subgraph Database ["Data Layer"]
+        Neo4j[("Neo4j Graph DB")]
+    end
+    subgraph External ["External Services"]
+        Alchemy["Alchemy API <br> (Blockchain Data)"]
+    end
+    %% Data Flow
+    User -->|Interacts| UI
+    UI -->| fetches data | API_Graph
+    UI -->| manages | API_Blacklist
+    UI -->| requests analysis | API_Analyze
+    UI -->| requests path | API_Path
+    
+    API_Analyze -->| fetches raw txs | Alchemy
+    API_Analyze -->| stores graph data | Neo4j
+    
+    API_Graph -->| queries nodes/links | Neo4j
+    API_Path -->| queries paths | Neo4j
+    API_Blacklist -->| updates status | Neo4j
+    %% Internal Processing
+    UI -->| executes | RiskEngine
+    RiskEngine -->| updates visual risk | UI

@@ -1,0 +1,29 @@
+graph TD
+    %% Define Users
+    User["User / Analyst"]
+    Admin["Administrator"]
+
+    %% Define System
+    System["Blockchain Analysis System<br/>(Next.js Application)"]
+
+    %% Define External Systems
+    Blockchain["Blockchain Network / Node<br/>(e.g., Ethereum, Bitcoin)"]
+    MarketData["Market Data API<br/>(e.g., CoinGecko, Binance)"]
+    Auth["Identity Provider<br/>(e.g., Google, Auth0)"]
+    Notify["Notification Service<br/>(e.g., Email, Discord)"]
+
+    %% Relationships
+    User -->|"View Graphs & Analyze Data"| System
+    Admin -->|"Configure System Settings"| System
+    
+    System -->|"Fetch Blocks & Transactions"| Blockchain
+    System -->|"Fetch Token Prices"| MarketData
+    System -->|"Authenticate Users"| Auth
+    System -->|"Send Alerts"| Notify
+
+    %% Styling
+    style System fill:,stroke:#333,stroke-width:4px
+    style Blockchain fill:,stroke:#333
+    style MarketData fill:,stroke:#333
+    style Auth fill:,stroke:#333
+    style Notify fill:,stroke:#333
