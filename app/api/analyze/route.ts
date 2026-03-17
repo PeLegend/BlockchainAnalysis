@@ -1,5 +1,3 @@
-//// <Move To Golang>
-
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import neo4j from 'neo4j-driver';
@@ -22,7 +20,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const { address, useMock } = body;
+        const { address, useMock, hops = 2 } = body;
 
         // If using mock, address is optional (or can be ignored), otherwise it's required
         if (!useMock && !address) {
@@ -33,9 +31,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Server configuration error: ALCHEMY_API_URL missing' }, { status: 500 });
         }
 
-        // Step 1: Reset Database (Clear old data)
-        await session.run('MATCH (n) DETACH DELETE n');
-        console.log('Database cleared.');
+        // Step 1: Reset Database (Clear old data except Blacklist and Exempt)
+        await session.run("MATCH (n) WHERE NOT 'Blacklist' IN labels(n) AND NOT 'Exempt' IN labels(n) DETACH DELETE n");
+        console.log('Database cleared (Blacklist and Exempt preserved).');
 
         let transfers: any[] = [];
 
@@ -61,12 +59,37 @@ export async function POST(request: Request) {
             }
 
         } else {
+            // Load node tags to identify exchanges
+            const tagsPath = path.join(process.cwd(), 'nodeTags.json');
+            let nodeTags: Record<string, any> = {};
+            try {
+                if (fs.existsSync(tagsPath)) {
+                    nodeTags = JSON.parse(fs.readFileSync(tagsPath, 'utf8'));
+                }
+            } catch (e) {
+                console.error('Could not load nodeTags.json:', e);
+            }
+
+            const isExchange = (addr: string) => {
+                const tagData = nodeTags[addr.toLowerCase()];
+                return tagData && tagData.group === 'Exchange';
+            };
+
             // Helper function to fetch transfers with pagination
-            const fetchTransfers = async (addr: string, direction: 'in' | 'out') => {
+            const fetchTransfers = async (addr: string, direction: 'in' | 'out', hopIndex: number) => {
                 let pageKey = null;
                 let all: any[] = [];
+                
+                // Aggressively limit deeper hops to save API compute units
+                const maxPages = hopIndex === 1 ? 2 : 1;
+                const maxCountHex = hopIndex === 1 ? "0x12C" : "0x14"; // 300 for root, 20 for branches
+
+                let pageCount = 0;
 
                 do {
+                    pageCount++;
+                    if (pageCount > maxPages) break;
+
                     const res: any = await axios.post(ALCHEMY_API_URL!, {
                         jsonrpc: '2.0',
                         id: 1,
@@ -79,6 +102,7 @@ export async function POST(request: Request) {
                             category: ['external', 'erc20'],
                             withMetadata: true,
                             excludeZeroValue: true,
+                            maxCount: maxCountHex,
                             pageKey: pageKey ? pageKey : undefined
                         }]
                     });
@@ -95,21 +119,72 @@ export async function POST(request: Request) {
                 return all;
             };
 
-            // Fetch both outgoing and incoming transactions
-            const outgoing = await fetchTransfers(address, 'out');
-            const incoming = await fetchTransfers(address, 'in');
-            transfers = [...outgoing, ...incoming];
+            // Map to track unique transactions by hash
+            const txMap = new Map<string, any>();
+            const visited = new Set<string>();
+            const maxHops = Math.min(Math.max(Number(hops) || 1, 1), 3); // Safety clamp
+            let currentQueue: string[] = [address.toLowerCase()];
 
-            console.log(`Fetched ${transfers.length} transactions (${outgoing.length} out, ${incoming.length} in).`);
+            for (let hop = 1; hop <= maxHops; hop++) {
+                console.log(`\n--- Fetching HOP ${hop} (Depth Limit: ${maxHops}) ---`);
+                const nextQueue = new Set<string>();
+
+                // Limit queue size per hop to avoid massive spread
+                const limitScale = hop === 1 ? 1 : (hop === 2 ? 10 : 5);
+                const processQueue = currentQueue.slice(0, limitScale); 
+
+                for (const addr of processQueue) {
+                    if (visited.has(addr)) continue;
+                    visited.add(addr);
+
+                    // Stop expanding if this node is a known Exchange
+                    if (hop > 1 && isExchange(addr)) {
+                        console.log(`Hop ${hop} | Addr: ${addr.slice(0, 6)}... | Skipped (Exchange)`);
+                        continue;
+                    }
+
+                    try {
+                        const [outTxs, inTxs] = await Promise.all([
+                            fetchTransfers(addr, 'out', hop),
+                            fetchTransfers(addr, 'in', hop)
+                        ]);
+
+                        // Combine and filter out internal exchange-to-exchange noise if necessary
+                        const allTxs = [...outTxs, ...inTxs];
+                        console.log(`Hop ${hop} | Addr: ${addr.slice(0, 6)}... | Found: ${allTxs.length} txs`);
+
+                        allTxs.forEach(tx => {
+                            if (!txMap.has(tx.hash)) {
+                                txMap.set(tx.hash, tx);
+                            }
+                            
+                            // Collect addresses for the next hop, heavily filtering
+                            if (tx.to && !visited.has(tx.to.toLowerCase())) nextQueue.add(tx.to.toLowerCase());
+                            if (tx.from && !visited.has(tx.from.toLowerCase())) nextQueue.add(tx.from.toLowerCase());
+                        });
+                    } catch (err: any) {
+                        console.error(`Error fetching for ${addr}:`, err.message);
+                    }
+                }
+
+                currentQueue = Array.from(nextQueue);
+                if (currentQueue.length === 0) {
+                    console.log(`No new addresses found at hop ${hop}. Stopping.`);
+                    break;
+                }
+            }
+
+            transfers = Array.from(txMap.values());
+            console.log(`\n✅ Graph Expansion Complete. Total unique transactions: ${transfers.length}`);
         }
 
-        // Step 3: Clear existing data and ingest into Neo4j (session already declared above)
+        // Step 2: Clear existing data and ingest into Neo4j (session already declared above)
         console.log('Re-clearing database before ingest...');
 
         try {
-            // Clear all existing nodes and relationships again to be safe
-            await session.run('MATCH (n) DETACH DELETE n');
-            console.log('Neo4j database cleared successfully.');
+            // Clear all existing nodes and relationships again to be safe, except preserved ones
+            await session.run("MATCH (n) WHERE NOT 'Blacklist' IN labels(n) AND NOT 'Exempt' IN labels(n) DETACH DELETE n");
+            console.log('Neo4j database cleared successfully (Preserved special lists).');
         } catch (clearError) {
             console.error('Warning: Failed to clear database:', clearError);
             // Continue anyway - non-critical

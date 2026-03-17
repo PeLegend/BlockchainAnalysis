@@ -19,11 +19,13 @@ const BURST_WINDOW_MS = 60_000;
 export const DEFAULT_BLACKLIST_ADDRESSES = new Set(
     [
         'Test',
-        // '0xBlacklist_Exchange_Y',
-        // '0xTornado_Cash_Router',
-        // '0x1234567890123456789012345678901234567890'
     ].map(a => a.toLowerCase())
 );
+
+// Default DApps/Exchanges to exempt from risk scoring to prevent score inflation
+export const EXEMPT_ADDRESSES = new Set<string>([
+    // '0xSomeKnownExchangeAddress',
+]);
 
 // Legacy export for backward compatibility
 export const BLACKLIST_ADDRESSES = DEFAULT_BLACKLIST_ADDRESSES;
@@ -48,15 +50,21 @@ export interface RiskAnalysisLink {
 export interface RiskResult {
     score: number;
     reasons: Set<string>;
+    reasonsMap: Map<string, number>;
 }
 
 export function calculateRiskScores(
     nodes: RiskAnalysisNode[],
     links: RiskAnalysisLink[],
-    blacklistAddresses?: Set<string> | string[]
+    blacklistAddresses?: Set<string> | string[],
+    exemptAddressesList?: string[]
 ): Map<string, RiskResult> {
 
-    // Prepare blacklist set (normalize to lowercase)
+    // --- Configuration ---
+    const TRANSMISSION_RATE = 0.1;
+    const MAX_ROUNDS = 3;
+
+    // Prepare blacklist set
     let activeBlacklist: Set<string>;
     if (blacklistAddresses) {
         if (blacklistAddresses instanceof Set) {
@@ -68,360 +76,229 @@ export function calculateRiskScores(
         activeBlacklist = DEFAULT_BLACKLIST_ADDRESSES;
     }
 
-    console.log('--- RISK SCORING START ---');
-    console.log('Input Nodes:', nodes.length);
-    console.log('Input Links:', links.length);
-    6
-    // --- Node Maps ---
-    const nodeMap = new Map(
-        nodes.map(n => [String(n.id).toLowerCase(), n])
-    );
-
-    const txNodes = new Set(
-        nodes
-            .filter(n => n.group === 'Transaction')
-            .map(n => String(n.id).toLowerCase())
-    );
-
-    const txSenders = new Map<string, string>();
-    const txReceivers = new Map<string, string>();
-
-    const transfers: { from: string; to: string; time: number }[] = [];
-
-    // --- Parse Links ---
-    links.forEach(l => {
-        const sVal = typeof l.source === 'object' ? l.source.id : l.source;
-        const tVal = typeof l.target === 'object' ? l.target.id : l.target;
-
-        const s = String(sVal).toLowerCase();
-        const t = String(tVal).toLowerCase();
-
-        const isSourceTx = txNodes.has(s);
-        const isTargetTx = txNodes.has(t);
-
-        // CASE A: Wallet -> Wallet
-        if (!isSourceTx && !isTargetTx) {
-            let time: number | undefined;
-
-            if (l.timestamp) time = new Date(l.timestamp).getTime();
-            else if (l.metadata?.blockTimestamp)
-                time = new Date(l.metadata.blockTimestamp).getTime();
-            else if (nodeMap.get(s)?.timestamp)
-                time = new Date(nodeMap.get(s)!.timestamp!).getTime();
-
-            // Fallback if no time found (ensure transfer is still checked for risk)
-            if (!time || Number.isNaN(time)) {
-                // console.log(`[RISK] Warning: Transfer ${s} -> ${t} has no timestamp. using 0.`);
-                time = 0;
-            }
-
-            transfers.push({ from: s, to: t, time });
-        }
-
-        // CASE B: Wallet -> Tx
-        else if (!isSourceTx && isTargetTx) {
-            txSenders.set(t, s);
-        }
-
-        // CASE C: Tx -> Wallet
-        else if (isSourceTx && !isTargetTx) {
-            txReceivers.set(s, t);
-        }
-    });
-
-    // --- Rebuild Indirect Transfers ---
-    console.log(`Transaction nodes count: ${txNodes.size}`);
-    console.log(`txSenders entries: ${txSenders.size}`);
-    console.log(`txReceivers entries: ${txReceivers.size}`);
-
-    txNodes.forEach(txId => {
-        const sender = txSenders.get(txId);
-        const receiver = txReceivers.get(txId);
-        const txNode = nodeMap.get(txId);
-
-        if (!sender || !receiver) {
-            console.log(`[SKIP] Transaction ${txId.substring(0, 15)}... missing sender:${!!sender} receiver:${!!receiver}`);
-            return;
-        }
-
-        let time: number | undefined;
-
-        if (txNode?.timestamp)
-            time = new Date(txNode.timestamp).getTime();
-        else if (txNode?.metadata?.blockTimestamp)
-            time = new Date(txNode.metadata.blockTimestamp).getTime();
-
-        if (!time || Number.isNaN(time)) {
-            time = 0;
-        }
-
-        console.log(`[TX] ${sender.substring(0, 10)} -> ${receiver.substring(0, 10)} via ${txId.substring(0, 10)}`);
-        transfers.push({ from: sender, to: receiver, time });
-    });
-
-    console.log('Transfers found:', transfers.length);
-    if (transfers.length > 0) {
-        console.log('Sample transfer:', transfers[0]);
+    const exemptNodes = new Set<string>([...EXEMPT_ADDRESSES]);
+    if (exemptAddressesList) {
+        exemptAddressesList.forEach(a => exemptNodes.add(a.toLowerCase()));
     }
 
-    // --- Risk Map ---
-    const riskMap = new Map<string, RiskResult>();
+    // --- Node Maps & Graph Building ---
+    const nodeMap = new Map(nodes.map(n => [String(n.id).toLowerCase(), n]));
+    const txNodes = new Set(nodes.filter(n => n.group === 'Transaction').map(n => String(n.id).toLowerCase()));
+    const txSenders = new Map<string, string>();
+    const txReceivers = new Map<string, string>();
+    const transfers: { from: string; to: string; time: number }[] = [];
 
+    links.forEach(l => {
+        const s = String(typeof l.source === 'object' ? l.source.id : l.source).toLowerCase();
+        const t = String(typeof l.target === 'object' ? l.target.id : l.target).toLowerCase();
+        if (txNodes.has(s)) txReceivers.set(s, t);
+        else if (txNodes.has(t)) txSenders.set(t, s);
+        else transfers.push({ from: s, to: t, time: l.timestamp || 0 });
+    });
+
+    txNodes.forEach(txId => {
+        const s = txSenders.get(txId);
+        const r = txReceivers.get(txId);
+        if (s && r) {
+            const node = nodeMap.get(txId);
+            const time = node?.timestamp || 0;
+            transfers.push({ from: s, to: r, time });
+        }
+    });
+
+    // Build Adjacency List for Wallets (Neighbors N(n))
+    const adj = new Map<string, Set<string>>();
+    transfers.forEach(tx => {
+        if (exemptNodes.has(tx.from) || exemptNodes.has(tx.to)) return;
+        if (!adj.has(tx.from)) adj.set(tx.from, new Set());
+        if (!adj.has(tx.to)) adj.set(tx.to, new Set());
+        adj.get(tx.from)!.add(tx.to);
+        adj.get(tx.to)!.add(tx.from);
+    });
+
+    const riskMap = new Map<string, RiskResult>();
     const getRisk = (id: string) => {
         if (!riskMap.has(id)) {
-            riskMap.set(id, { score: 0, reasons: new Set() });
+            riskMap.set(id, { score: 0, reasons: new Set(), reasonsMap: new Map() });
         }
         return riskMap.get(id)!;
     };
 
-    const outgoing = new Map<string, Set<string>>();
-    const incoming = new Map<string, Set<string>>();
-    const txsByAccount = new Map<string, number[]>();
+    // --- Step 1: Calculate Base Risk (S_base) ---
+    // S_base = S_blacklist + S_behavior
+    const baseScores = new Map<string, number>();
 
-    // --- Analyze Nodes (Direct Checks) ---
-    nodeMap.forEach((_, id) => {
-        if (activeBlacklist.has(id)) {
-            console.log(`[BLACKLIST] Node ${id} is explicitly blacklisted`);
-            const risk = getRisk(id);
-            risk.score = 100; // Force max score
-            risk.reasons.add('Blacklisted Wallet Address');
-        }
+    // A. Blacklist
+    activeBlacklist.forEach(id => {
+        baseScores.set(id, 100);
+        getRisk(id).reasonsMap.set('Blacklisted Wallet Address', 100);
     });
 
-    // --- Analyze Transfers ---
+    // A2. Interaction with Blacklist (Immediate 100 Risk)
     transfers.forEach(tx => {
-        const fromRisk = getRisk(tx.from);
-        const toRisk = getRisk(tx.to);
+        const fromAddr = tx.from.toLowerCase();
+        const toAddr = tx.to.toLowerCase();
 
-        // RULE 1: Blacklist
-        // DEBUG LOGGING
-        // console.log(`Checking transfer: ${tx.from} -> ${tx.to}`);
-
-
-        // if (activeBlacklist.has(tx.to) || tx.to.includes('blacklist')) {
-        //     console.log(`[BLACKLIST] ${tx.from} -> ${tx.to} (Target is Blacklisted)`);
-        //     fromRisk.score = 100;
-        //     fromRisk.reasons.add('Transfer to Blacklist');
-        // }
-
-        if (activeBlacklist.has(tx.from)) {
-            console.log(`[BLACKLIST] ${tx.from} (Blacklisted sender) -> ${tx.to}`);
-            toRisk.score += RISK_RULES.BLACKLIST;
-            toRisk.reasons.add('Received from Blacklist');
+        // If I transfer TO a blacklist
+        if (activeBlacklist.has(toAddr)) {
+            baseScores.set(fromAddr, 100);
+            getRisk(fromAddr).reasonsMap.set('Transfer to Blacklist', 100);
         }
 
-        // Stats
-        outgoing.set(tx.from, (outgoing.get(tx.from) ?? new Set()).add(tx.to));
-        incoming.set(tx.to, (incoming.get(tx.to) ?? new Set()).add(tx.from));
-
-        txsByAccount.set(tx.from, [...(txsByAccount.get(tx.from) ?? []), tx.time]);
-        txsByAccount.set(tx.to, [...(txsByAccount.get(tx.to) ?? []), tx.time]);
-    });
-
-    // // RULE 2: Hybrid Fan-out (Matches both "Many Destinations" and "Repeated Concentration")
-    // const interactionMap = new Map<string, Map<string, number>>(); // Sender -> { Recipient -> Count }
-
-    // transfers.forEach(tx => {
-    //     if (!interactionMap.has(tx.from)) interactionMap.set(tx.from, new Map());
-    //     const recipients = interactionMap.get(tx.from)!;
-    //     recipients.set(tx.to, (recipients.get(tx.to) || 0) + 1);
-    // });
-
-    // interactionMap.forEach((recipients, sender) => {
-    //     // 1. One-to-Many (Classic Fan-out): Count unique recipients
-    //     const uniqueRecipients = recipients.size;
-
-    //     // 2. One-to-One (Concentrated): Count max repeated txs to one person
-    //     let maxRepeated = 0;
-    //     recipients.forEach((count) => {
-    //         maxRepeated = Math.max(maxRepeated, count);
-    //     });
-
-    //     const isFanOut = uniqueRecipients >= FAN_THRESHOLD;
-    //     const isConcentrated = maxRepeated >= FAN_THRESHOLD;
-
-    //     if (isFanOut || isConcentrated) {
-    //         console.log(`[FAN-OUT] ${sender} - Unique: ${uniqueRecipients}, MaxRepeated: ${maxRepeated}`);
-    //         const risk = getRisk(sender);
-    //         risk.score += RISK_RULES.SMURFING;
-
-    //         if (isFanOut && isConcentrated) {
-    //             risk.reasons.add(`High Activity (Unique ${uniqueRecipients} & Repeated ${maxRepeated})`);
-    //         } else if (isFanOut) {
-    //             risk.reasons.add(`Fan-out to ${uniqueRecipients} Unique Addrs`);
-    //         } else {
-    //             risk.reasons.add(`Repeated Tx to Single Addr (${maxRepeated}x)`);
-    //         }
-    //     }
-    // });
-
-    // RULE 2: Fan-in (Smurfing) with Time Window
-    // Fixed: Merchants receive many txs over time. Smurfing usually happens in a short burst.
-    // Check if unique senders >= THRESHOLD within a specific time window (e.g., 60 mins)
-    const SMURF_WINDOW_MS = 60 * 60 * 1000; // 60 minutes
-
-    incoming.forEach((senders, receiver) => {
-        // Optimization: Quick skip if total senders < threshold
-        if (senders.size < FAN_THRESHOLD) return;
-
-        // Get all incoming transfers for this receiver
-        const incomingTxs = transfers.filter(tx => tx.to === receiver && tx.time > 0);
-        if (incomingTxs.length < FAN_THRESHOLD) return;
-
-        // Sort by time
-        incomingTxs.sort((a, b) => a.time - b.time);
-
-        let isSmurfing = false;
-        let maxUniqueSendersInWindow = 0;
-
-        // Sliding window check
-        for (let i = 0; i < incomingTxs.length; i++) {
-            const windowStart = incomingTxs[i].time;
-            const windowEnd = windowStart + SMURF_WINDOW_MS;
-
-            // Count unique senders in this window
-            const uniqueSendersInWindow = new Set<string>();
-
-            for (let j = i; j < incomingTxs.length; j++) {
-                if (incomingTxs[j].time > windowEnd) break;
-                uniqueSendersInWindow.add(incomingTxs[j].from);
-            }
-
-            if (uniqueSendersInWindow.size >= FAN_THRESHOLD) {
-                isSmurfing = true;
-                maxUniqueSendersInWindow = uniqueSendersInWindow.size;
-                break;
-            }
-        }
-
-        if (isSmurfing) {
-            console.log(`[SMURFING] ${receiver} has fan-in from ${maxUniqueSendersInWindow} unique senders within ${SMURF_WINDOW_MS / 60000} mins`);
-            const risk = getRisk(receiver);
-            risk.score += RISK_RULES.SMURFING;
-            risk.reasons.add(`Fan-in (Smurfing) ≥ ${FAN_THRESHOLD} within 1h`);
+        // If I receive FROM a blacklist
+        if (activeBlacklist.has(fromAddr)) {
+            baseScores.set(toAddr, 100);
+            getRisk(toAddr).reasonsMap.set('Received from Blacklist', 100);
         }
     });
 
-    // RULE 3: High Frequency
-    console.log('Checking High Frequency patterns...');
-    txsByAccount.forEach((times, accountId) => {
-        if (times.length < BURST_THRESHOLD) return;
-
-        times.sort((a, b) => a - b);
-
-        for (let i = 0; i <= times.length - BURST_THRESHOLD; i++) {
-            const diff = times[i + BURST_THRESHOLD - 1] - times[i];
-            if (diff <= BURST_WINDOW_MS) {
-                console.log(`[HIGH_FREQ] ${accountId} has burst of ${BURST_THRESHOLD} tx in ${diff}ms`);
-                const risk = getRisk(accountId);
-                risk.score += RISK_RULES.HIGH_FREQ;
-                risk.reasons.add(`Burst ≥ ${BURST_THRESHOLD}/min`);
-                break;
-            }
-        }
+    // B. Behavior (Smurfing/Burst)
+    const stats = new Map<string, { 
+        out: Set<string>; 
+        in: Set<string>; 
+        totalOut: number; 
+        totalIn: number; 
+        times: number[] 
+    }>();
+    
+    transfers.forEach(tx => {
+        if (exemptNodes.has(tx.from) || exemptNodes.has(tx.to)) return;
+        if (!stats.has(tx.from)) stats.set(tx.from, { out: new Set(), in: new Set(), totalOut: 0, totalIn: 0, times: [] });
+        if (!stats.has(tx.to)) stats.set(tx.to, { out: new Set(), in: new Set(), totalOut: 0, totalIn: 0, times: [] });
+        
+        stats.get(tx.from)!.out.add(tx.to);
+        stats.get(tx.from)!.totalOut++;
+        stats.get(tx.from)!.times.push(tx.time);
+        
+        stats.get(tx.to)!.in.add(tx.from);
+        stats.get(tx.to)!.totalIn++;
+        stats.get(tx.to)!.times.push(tx.time);
     });
 
-    // RULE 4: Risk Propagation (Snapshot-based for consistency)
-    // Use snapshots to prevent feedback loops and ensure same-layer nodes get equal propagation
-    console.log('Applying Risk Propagation (snapshot-based)...');
+    stats.forEach((s, id) => {
+        let behaviorScore = 0;
+        
+        // --- Dynamic Fan-out Scoring ---
+        if (s.out.size > 5) {
+            const ratio = s.out.size / s.totalOut;
+            const dynamicScore = (ratio * 50) + (Math.log10(s.out.size + 1) * 10);
+            behaviorScore += dynamicScore;
+            getRisk(id).reasonsMap.set(`High Fan-out (Ratio: ${ratio.toFixed(2)})`, dynamicScore);
+        }
+        
+        // --- Dynamic Fan-in Scoring ---
+        if (s.in.size > 5) {
+            const ratio = s.in.size / s.totalIn;
+            const dynamicScore = (ratio * 50) + (Math.log10(s.in.size + 1) * 10);
+            behaviorScore += dynamicScore;
+            getRisk(id).reasonsMap.set(`High Fan-in (Ratio: ${ratio.toFixed(2)})`, dynamicScore);
+        }
 
-    const PROPAGATION_TO_SENDER = 0.20; // 10% of destination risk (ลดจาก 20%)
-    const PROPAGATION_TO_TX = 0.15;     // 8% of destination risk (ลดจาก 15%)
-    const MAX_ROUNDS = 3; // Propagate up to 3 hops
-
-    for (let round = 0; round < MAX_ROUNDS; round++) {
-        console.log(`--- Propagation Round ${round + 1} ---`);
-
-        // Decay Factor based on distance (hops)
-        // Round 0 (1 hop): 100% of base rate
-        // Round 1 (2 hops): 50% of base rate
-        // Round 2 (3 hops): 33% of base rate
-        const decayFactor = 1 / (round + 1);
-        const currentSenderRate = PROPAGATION_TO_SENDER * decayFactor;
-        const currentTxRate = PROPAGATION_TO_TX * decayFactor;
-
-        // Take a SNAPSHOT of current risk scores before this round
-        const riskSnapshot = new Map<string, number>();
-        riskMap.forEach((risk, id) => {
-            riskSnapshot.set(id, risk.score);
-        });
-
-        let changesInThisRound = false;
-
-        transfers.forEach(tx => {
-            // Use SNAPSHOT scores for propagation calculation
-            const toRiskScore = riskSnapshot.get(tx.to) || 0;
-            const fromRiskScore = riskSnapshot.get(tx.from) || 0;
-
-            // Propagate from destination to sender (Backwards)
-            if (toRiskScore > 0) {
-                const sender = getRisk(tx.from);
-                // Apply decay factor
-                const propagatedScore = Math.floor(toRiskScore * currentSenderRate);
-
-                if (propagatedScore > 0) {
-                    // console.log(`[PROPAGATION R${round + 1}] ${tx.from} gets +${propagatedScore} from risky destination ${tx.to} (score: ${toRiskScore})`);
-                    sender.score += propagatedScore;
-                    sender.reasons.add(`Direct/Indirect link to risk`);
-                    changesInThisRound = true;
+        // --- Burst Scoring ---
+        if (s.times.length >= BURST_THRESHOLD) {
+            s.times.sort((a, b) => a - b);
+            for (let i = 0; i <= s.times.length - BURST_THRESHOLD; i++) {
+                if (s.times[i + BURST_THRESHOLD - 1] - s.times[i] <= BURST_WINDOW_MS) {
+                    behaviorScore += RISK_RULES.HIGH_FREQ;
+                    getRisk(id).reasonsMap.set(`High Frequency Burst Activity`, RISK_RULES.HIGH_FREQ);
+                    break;
                 }
             }
+        }
 
-            // Propagate from sender to destination (Forwards)
-            if (fromRiskScore > 0) {
-                const receiver = getRisk(tx.to);
-                // Apply decay factor
-                const propagatedScore = Math.floor(fromRiskScore * currentSenderRate); // Use same rate for wallet-to-wallet
+        // --- Behavior Cap ---
+        // Behavioral contribution (Rule 2 + 3) never exceeds 60 pts
+        if (behaviorScore > 0) {
+            const cappedBehavior = Math.min(behaviorScore, 60);
+            const currentBase = baseScores.get(id) || 0;
+            baseScores.set(id, currentBase + cappedBehavior);
+        }
+    });
 
-                if (propagatedScore > 0) {
-                    // console.log(`[PROPAGATION R${round + 1}] ${tx.to} gets +${propagatedScore} from risky sender ${tx.from} (score: ${fromRiskScore})`);
-                    receiver.score += propagatedScore;
-                    receiver.reasons.add(`Direct/Indirect link to risk`);
-                    changesInThisRound = true;
-                }
+    // --- Step 2: Iterative Propagation (3 Rounds) ---
+    // S^(x)(n) = max( S_base(n), S^(x-1)(n) + sum( S^(x-1)(neighbors) * 0.1 * 1/x ) )
+    let currentScores = new Map(baseScores);
+
+    for (let x = 1; x <= MAX_ROUNDS; x++) {
+        const nextScores = new Map<string, number>();
+        const decay = 1 / x;
+
+        nodeMap.forEach((_, id) => {
+            if (exemptNodes.has(id)) return;
+
+            const sBase = baseScores.get(id) || 0;
+            const prevScore = currentScores.get(id) || 0;
+
+            let neighborSum = 0;
+            const neighbors = adj.get(id) || new Set();
+            neighbors.forEach(nId => {
+                neighborSum += currentScores.get(nId) || 0;
+            });
+
+            const propagatedRisk = neighborSum * TRANSMISSION_RATE * decay;
+            const newScore = Math.max(sBase, prevScore + propagatedRisk);
+
+            // Display Fix: Show final score for the round instead of increment
+            if (propagatedRisk > 0.5) {
+                getRisk(id).reasonsMap.set(`Risk after Round ${x} Propagation`, newScore);
             }
+
+            nextScores.set(id, newScore);
         });
 
-        // If no changes in this round, we're done
-        if (!changesInThisRound) {
-            console.log(`No more propagation needed after ${round + 1} rounds`);
-            break;
-        }
+        currentScores = nextScores;
     }
 
-    // Propagate to Transaction nodes (intermediate nodes)
-    console.log('Propagating risk to Transaction nodes...');
-    txNodes.forEach(txId => {
-        const sender = txSenders.get(txId);
-        const receiver = txReceivers.get(txId);
-
-        if (sender && receiver) {
-            const senderRisk = riskMap.get(sender);
-            const receiverRisk = riskMap.get(receiver);
-
-            if ((senderRisk && senderRisk.score > 0) || (receiverRisk && receiverRisk.score > 0)) {
-                const txRisk = getRisk(txId);
-                const maxConnectedRisk = Math.max(
-                    senderRisk?.score || 0,
-                    receiverRisk?.score || 0
-                );
-                const propagatedScore = Math.floor(maxConnectedRisk * PROPAGATION_TO_TX);
-
-                if (propagatedScore > 0) {
-                    console.log(`[PROPAGATION] Transaction ${txId.substring(0, 10)}... gets +${propagatedScore}`);
-                    txRisk.score += propagatedScore;
-                    txRisk.reasons.add(`Transaction between risky addresses`);
-                }
-            }
+    // --- Step 3: Finalization & Exemption ---
+    // Track direct blacklist contacts for "Critical Reservation"
+    const directContacts = new Set<string>();
+    transfers.forEach(tx => {
+        if (activeBlacklist.has(tx.from) || activeBlacklist.has(tx.to)) {
+            directContacts.add(tx.from);
+            directContacts.add(tx.to);
         }
     });
 
-    // Cap score
-    riskMap.forEach(r => {
-        if (r.score > 100) r.score = 100;
-    });
+    riskMap.forEach((r, id) => {
+        if (exemptNodes.has(id)) {
+            r.score = 0;
+            r.reasons.clear();
+            r.reasonsMap.clear();
+            r.reasons.add('Exempt DApp/Exchange (Risk Ignored)');
+            return;
+        }
 
-    console.log('Risk Result:', [...riskMap.entries()]);
+        let finalScore = currentScores.get(id) || 0;
+        const node = nodeMap.get(id);
+
+        if (node?.group === 'Transaction') {
+            const s = txSenders.get(id);
+            const rec = txReceivers.get(id);
+            if (s && rec) {
+                finalScore = Math.max(currentScores.get(s) || 0, currentScores.get(rec) || 0) * 0.5;
+            }
+        }
+
+        // --- Critical Reservation ---
+        // Score is capped at 90 unless Blacklisted or Direct Contact
+        const isCriticalCandidate = activeBlacklist.has(id) || directContacts.has(id);
+        if (!isCriticalCandidate) {
+            finalScore = Math.min(finalScore, 89); // Keep them in High/Orange at most
+        }
+
+        r.score = Math.min(Math.round(finalScore), 100);
+
+        // Finalize reasons from map
+        r.reasonsMap.forEach((val, txt) => {
+            // Filter out internal display reasons that shouldn't be in the final list
+            if (txt.startsWith('Risk after Round') && r.score < 1) return;
+            
+            if (val >= 1) {
+                const displayVal = txt.startsWith('Risk after Round') ? Math.round(val) : `+${Math.round(val)}`;
+                r.reasons.add(`${txt} (${displayVal})`);
+            }
+        });
+    });
 
     return riskMap;
 }

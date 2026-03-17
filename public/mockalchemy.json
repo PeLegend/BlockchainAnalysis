@@ -703,7 +703,300 @@
                 "metadata": {
                     "blockTimestamp": "2024-08-02T13:00:00.000Z"
                 }
-            }
+            },
+
+            {
+                "blockNum": "0xf00400",
+                "uniqueId": "0xTx_BL_Direct_1",
+                "hash": "0xTxHash_BL_Source_to_Victim",
+                "from": "0xBlacklist_Known_Scammer",
+                "to": "0xVictim_Innocent_Wallet",
+                "value": 2500.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-09-01T08:00:00.000Z" }
+            },
+            {
+                "blockNum": "0xf00401",
+                "uniqueId": "0xTx_BL_Direct_2",
+                "hash": "0xTxHash_Victim_Sends_to_BL",
+                "from": "0xSuspect_Wallet_X",
+                "to": "0xBlacklist_Known_Scammer",
+                "value": 500.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-09-01T09:00:00.000Z" }
+            },
+            {
+                "blockNum": "0xf00402",
+                "uniqueId": "0xTx_BL_Propagation_1",
+                "hash": "0xTxHash_Victim_Passes_On",
+                "from": "0xVictim_Innocent_Wallet",
+                "to": "0xSecondary_Contact_01",
+                "value": 1200.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-09-02T10:00:00.000Z" }
+            },
+            {
+                "blockNum": "0xf00403",
+                "uniqueId": "0xTx_BL_Propagation_2",
+                "hash": "0xTxHash_Secondary_Passes_On",
+                "from": "0xSecondary_Contact_01",
+                "to": "0xTertiary_Contact_01",
+                "value": 800.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-09-03T10:00:00.000Z" }
+            },
+
+            {
+                "blockNum": "0xf00500",
+                "uniqueId": "0xTx_Exch_Cold_1",
+                "hash": "0xTxHash_Exchange_Withdrawal_01",
+                "from": "0xBinance_Cold_Wallet",
+                "to": "0xExchange_User_001",
+                "value": 500.0,
+                "asset": "USDT",
+                "category": "erc20",
+                "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" },
+                "metadata": { "blockTimestamp": "2024-10-01T00:00:00.000Z" }
+            },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_2",  "hash": "0xTxHash_Exchange_Withdrawal_02",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_001", "value": 250.0,   "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T01:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_3",  "hash": "0xTxHash_Exchange_Withdrawal_03",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_001", "value": 1000.0,  "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T02:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_4",  "hash": "0xTxHash_Exchange_Withdrawal_04",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_001", "value": 75.0,    "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T03:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_5",  "hash": "0xTxHash_Exchange_Withdrawal_05",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_002", "value": 400.0,   "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T04:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_6",  "hash": "0xTxHash_Exchange_Withdrawal_06",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_002", "value": 820.0,   "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T05:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_7",  "hash": "0xTxHash_Exchange_Withdrawal_07",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_003", "value": 30.0,    "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T06:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_8",  "hash": "0xTxHash_Exchange_Withdrawal_08",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_003", "value": 150.0,   "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T07:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_9",  "hash": "0xTxHash_Exchange_Withdrawal_09",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_001", "value": 90.0,    "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T08:00:00.000Z" } },
+            { "blockNum": "0xf00500", "uniqueId": "0xTx_Exch_Cold_10", "hash": "0xTxHash_Exchange_Withdrawal_10",  "from": "0xBinance_Cold_Wallet", "to": "0xExchange_User_002", "value": 2000.0,  "asset": "USDT", "category": "erc20", "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" }, "metadata": { "blockTimestamp": "2024-10-01T09:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00600",
+                "uniqueId": "0xTx_HighSmurf_1",
+                "hash": "0xTxHash_HighSmurf_01",
+                "from": "0xHigh_Dispersion_Wallet",
+                "to": "0xSmurf_Dest_01",
+                "value": 3.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-11-01T10:00:00.000Z" }
+            },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_2",  "hash": "0xTxHash_HS_02",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_02", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:01:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_3",  "hash": "0xTxHash_HS_03",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_03", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:02:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_4",  "hash": "0xTxHash_HS_04",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_04", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:03:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_5",  "hash": "0xTxHash_HS_05",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_05", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:04:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_6",  "hash": "0xTxHash_HS_06",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_06", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:05:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_7",  "hash": "0xTxHash_HS_07",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_07", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:06:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_8",  "hash": "0xTxHash_HS_08",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_08", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:07:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_9",  "hash": "0xTxHash_HS_09",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_09", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:08:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_10", "hash": "0xTxHash_HS_10",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_10", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:09:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_11", "hash": "0xTxHash_HS_11",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_11", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:10:00.000Z" } },
+            { "blockNum": "0xf00600", "uniqueId": "0xTx_HS_12", "hash": "0xTxHash_HS_12",  "from": "0xHigh_Dispersion_Wallet", "to": "0xSmurf_Dest_12", "value": 3.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-11-01T10:11:00.000Z" } },
+
+            {
+                "blockNum": "0xf00700",
+                "uniqueId": "0xTx_Clean_1",
+                "hash": "0xTxHash_Clean_01",
+                "from": "0xClean_Wallet_Alice",
+                "to": "0xClean_Wallet_Bob",
+                "value": 2.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-12-01T08:00:00.000Z" }
+            },
+            { "blockNum": "0xf00701", "uniqueId": "0xTx_Clean_2", "hash": "0xTxHash_Clean_02", "from": "0xClean_Wallet_Bob",   "to": "0xClean_Wallet_Charlie", "value": 1.5, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-02T08:00:00.000Z" } },
+            { "blockNum": "0xf00702", "uniqueId": "0xTx_Clean_3", "hash": "0xTxHash_Clean_03", "from": "0xClean_Wallet_Charlie","to": "0xClean_Wallet_Alice",   "value": 0.5, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-03T08:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00800",
+                "uniqueId": "0xTx_MixedFanIn_1",
+                "hash": "0xTxHash_FanIn_Collector_01",
+                "from": "0xMixed_Collector_Source_01",
+                "to": "0xFanIn_Aggregator",
+                "value": 50.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-12-10T10:00:00.000Z" }
+            },
+            { "blockNum": "0xf00800", "uniqueId": "0xTx_MixedFanIn_2",  "hash": "0xTxHash_FanIn_Collector_02",  "from": "0xMixed_Collector_Source_02", "to": "0xFanIn_Aggregator", "value": 45.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-10T10:10:00.000Z" } },
+            { "blockNum": "0xf00800", "uniqueId": "0xTx_MixedFanIn_3",  "hash": "0xTxHash_FanIn_Collector_03",  "from": "0xMixed_Collector_Source_03", "to": "0xFanIn_Aggregator", "value": 60.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-10T10:20:00.000Z" } },
+            { "blockNum": "0xf00800", "uniqueId": "0xTx_MixedFanIn_4",  "hash": "0xTxHash_FanIn_Collector_04",  "from": "0xMixed_Collector_Source_04", "to": "0xFanIn_Aggregator", "value": 30.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-10T10:30:00.000Z" } },
+            { "blockNum": "0xf00800", "uniqueId": "0xTx_MixedFanIn_5",  "hash": "0xTxHash_FanIn_Collector_05",  "from": "0xMixed_Collector_Source_05", "to": "0xFanIn_Aggregator", "value": 80.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-10T10:40:00.000Z" } },
+            { "blockNum": "0xf00800", "uniqueId": "0xTx_MixedFanIn_6",  "hash": "0xTxHash_FanIn_Collector_06",  "from": "0xMixed_Collector_Source_06", "to": "0xFanIn_Aggregator", "value": 55.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-10T10:50:00.000Z" } },
+            { "blockNum": "0xf00800", "uniqueId": "0xTx_MixedFanIn_7",  "hash": "0xTxHash_FanIn_Collector_07",  "from": "0xBlacklist_Known_Scammer",   "to": "0xFanIn_Aggregator", "value": 500.0,"asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-10T11:00:00.000Z" } },
+            {
+                "blockNum": "0xf00801",
+                "uniqueId": "0xTx_FanIn_Dispersal_1",
+                "hash": "0xTxHash_FanIn_Out_01",
+                "from": "0xFanIn_Aggregator",
+                "to": "0xFinal_Destination_Alpha",
+                "value": 800.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2024-12-11T08:00:00.000Z" }
+            },
+            { "blockNum": "0xf00801", "uniqueId": "0xTx_FanIn_Dispersal_2", "hash": "0xTxHash_FanIn_Out_02", "from": "0xFanIn_Aggregator", "to": "0xFinal_Destination_Beta",  "value": 120.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2024-12-11T09:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00900",
+                "uniqueId": "0xTx_Tornado_1",
+                "hash": "0xTxHash_Tornado_Deposit_01",
+                "from": "0xBlacklist_Ransomware_Group",
+                "to": "0xTornado_Cash_Router",
+                "value": 100.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-01-05T10:00:00.000Z" }
+            },
+            { "blockNum": "0xf00901", "uniqueId": "0xTx_Tornado_2", "hash": "0xTxHash_Tornado_Withdraw_01", "from": "0xTornado_Cash_Router", "to": "0xMixer_Output_W1", "value": 99.9, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-05T10:30:00.000Z" } },
+            { "blockNum": "0xf00902", "uniqueId": "0xTx_Tornado_3", "hash": "0xTxHash_Tornado_Withdraw_02", "from": "0xTornado_Cash_Router", "to": "0xMixer_Output_W2", "value": 99.9, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-05T11:00:00.000Z" } },
+            { "blockNum": "0xf00903", "uniqueId": "0xTx_Tornado_4", "hash": "0xTxHash_Mixer_Next_Hop_1",   "from": "0xMixer_Output_W1", "to": "0xSuspect_Final_Dest_1", "value": 99.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-06T08:00:00.000Z" } },
+            { "blockNum": "0xf00904", "uniqueId": "0xTx_Tornado_5", "hash": "0xTxHash_Mixer_Next_Hop_2",   "from": "0xMixer_Output_W2", "to": "0xSuspect_Final_Dest_2", "value": 98.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-06T09:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00A00",
+                "uniqueId": "0xTx_RansomwareChain_1",
+                "hash": "0xTxHash_Ransom_Victim_Pay_01",
+                "from": "0xRansom_Victim_Corp_A",
+                "to": "0xBlacklist_Ransomware_Group",
+                "value": 50.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-01-10T06:00:00.000Z" }
+            },
+            { "blockNum": "0xf00A00", "uniqueId": "0xTx_RansomwareChain_2", "hash": "0xTxHash_Ransom_Victim_Pay_02", "from": "0xRansom_Victim_Hospital_B", "to": "0xBlacklist_Ransomware_Group", "value": 30.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-10T07:00:00.000Z" } },
+            { "blockNum": "0xf00A01", "uniqueId": "0xTx_RansomwareChain_3", "hash": "0xTxHash_Ransom_Cashout_01",   "from": "0xBlacklist_Ransomware_Group", "to": "0xCashout_Middleman_R1", "value": 40.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-10T10:00:00.000Z" } },
+            { "blockNum": "0xf00A02", "uniqueId": "0xTx_RansomwareChain_4", "hash": "0xTxHash_Ransom_Cashout_02",   "from": "0xCashout_Middleman_R1", "to": "0xCashout_Middleman_R2", "value": 39.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-10T12:00:00.000Z" } },
+            { "blockNum": "0xf00A03", "uniqueId": "0xTx_RansomwareChain_5", "hash": "0xTxHash_Ransom_Cashout_03",   "from": "0xCashout_Middleman_R2", "to": "0xFake_Exchange_KYC",  "value": 38.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-11T08:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00B00",
+                "uniqueId": "0xTx_Ponzi_1",
+                "hash": "0xTxHash_Ponzi_Investor_01",
+                "from": "0xPonzi_Investor_01",
+                "to": "0xBlacklist_Ponzi_Operator",
+                "value": 5.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-01-15T09:00:00.000Z" }
+            },
+            { "blockNum": "0xf00B00", "uniqueId": "0xTx_Ponzi_2",  "hash": "0xTxHash_Ponzi_Investor_02", "from": "0xPonzi_Investor_02", "to": "0xBlacklist_Ponzi_Operator", "value": 10.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-15T09:30:00.000Z" } },
+            { "blockNum": "0xf00B00", "uniqueId": "0xTx_Ponzi_3",  "hash": "0xTxHash_Ponzi_Investor_03", "from": "0xPonzi_Investor_03", "to": "0xBlacklist_Ponzi_Operator", "value": 8.0,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-15T10:00:00.000Z" } },
+            { "blockNum": "0xf00B00", "uniqueId": "0xTx_Ponzi_4",  "hash": "0xTxHash_Ponzi_Investor_04", "from": "0xPonzi_Investor_04", "to": "0xBlacklist_Ponzi_Operator", "value": 20.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-15T10:30:00.000Z" } },
+            { "blockNum": "0xf00B00", "uniqueId": "0xTx_Ponzi_5",  "hash": "0xTxHash_Ponzi_Investor_05", "from": "0xPonzi_Investor_05", "to": "0xBlacklist_Ponzi_Operator", "value": 7.0,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-15T11:00:00.000Z" } },
+            { "blockNum": "0xf00B00", "uniqueId": "0xTx_Ponzi_6",  "hash": "0xTxHash_Ponzi_Investor_06", "from": "0xPonzi_Investor_06", "to": "0xBlacklist_Ponzi_Operator", "value": 3.0,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-15T11:30:00.000Z" } },
+            { "blockNum": "0xf00B01", "uniqueId": "0xTx_Ponzi_7",  "hash": "0xTxHash_Ponzi_FakeReturn_01","from": "0xBlacklist_Ponzi_Operator", "to": "0xPonzi_Investor_01", "value": 5.5,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-16T09:00:00.000Z" } },
+            { "blockNum": "0xf00B01", "uniqueId": "0xTx_Ponzi_8",  "hash": "0xTxHash_Ponzi_FakeReturn_02","from": "0xBlacklist_Ponzi_Operator", "to": "0xPonzi_Investor_02", "value": 2.0,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-16T09:30:00.000Z" } },
+            { "blockNum": "0xf00B02", "uniqueId": "0xTx_Ponzi_9",  "hash": "0xTxHash_Ponzi_Escape_01",   "from": "0xBlacklist_Ponzi_Operator", "to": "0xPonzi_Exit_Wallet",   "value": 40.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-01-17T06:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00C00",
+                "uniqueId": "0xTx_MultiAsset_1",
+                "hash": "0xTxHash_MultiAsset_ETH_01",
+                "from": "0xBlacklist_Alpha",
+                "to": "0xMultiAsset_Mixer",
+                "value": 300.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-02-01T08:00:00.000Z" }
+            },
+            {
+                "blockNum": "0xf00C01",
+                "uniqueId": "0xTx_MultiAsset_2",
+                "hash": "0xTxHash_MultiAsset_USDT_01",
+                "from": "0xBlacklist_Alpha",
+                "to": "0xMultiAsset_Mixer",
+                "value": 100000.0,
+                "asset": "USDT",
+                "category": "erc20",
+                "rawContract": { "address": "0xdac17f958d2ee523a2206206994597c13d831ec7" },
+                "metadata": { "blockTimestamp": "2025-02-01T08:05:00.000Z" }
+            },
+            {
+                "blockNum": "0xf00C02",
+                "uniqueId": "0xTx_MultiAsset_3",
+                "hash": "0xTxHash_MultiAsset_USDC_01",
+                "from": "0xBlacklist_Alpha",
+                "to": "0xMultiAsset_Mixer",
+                "value": 50000.0,
+                "asset": "USDC",
+                "category": "erc20",
+                "rawContract": { "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" },
+                "metadata": { "blockTimestamp": "2025-02-01T08:10:00.000Z" }
+            },
+            { "blockNum": "0xf00C03", "uniqueId": "0xTx_MultiAsset_4", "hash": "0xTxHash_MultiAsset_Out_01", "from": "0xMultiAsset_Mixer", "to": "0xClean_Looking_Wallet_M1", "value": 90.0,    "asset": "ETH",  "category": "external", "metadata": { "blockTimestamp": "2025-02-02T08:00:00.000Z" } },
+            { "blockNum": "0xf00C04", "uniqueId": "0xTx_MultiAsset_5", "hash": "0xTxHash_MultiAsset_Out_02", "from": "0xMultiAsset_Mixer", "to": "0xClean_Looking_Wallet_M2", "value": 80.0,    "asset": "ETH",  "category": "external", "metadata": { "blockTimestamp": "2025-02-02T09:00:00.000Z" } },
+            { "blockNum": "0xf00C05", "uniqueId": "0xTx_MultiAsset_6", "hash": "0xTxHash_MultiAsset_Out_03", "from": "0xMultiAsset_Mixer", "to": "0xClean_Looking_Wallet_M3", "value": 70.0,    "asset": "ETH",  "category": "external", "metadata": { "blockTimestamp": "2025-02-02T10:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00D00",
+                "uniqueId": "0xTx_WashTrade_1",
+                "hash": "0xTxHash_WashTrade_NFT_01",
+                "from": "0xNFT_WashTrader_A",
+                "to": "0xNFT_WashTrader_B",
+                "value": 10.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-02-10T10:00:00.000Z" }
+            },
+            { "blockNum": "0xf00D01", "uniqueId": "0xTx_WashTrade_2",  "hash": "0xTxHash_WashTrade_NFT_02", "from": "0xNFT_WashTrader_B", "to": "0xNFT_WashTrader_A", "value": 10.5, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-02-10T10:30:00.000Z" } },
+            { "blockNum": "0xf00D02", "uniqueId": "0xTx_WashTrade_3",  "hash": "0xTxHash_WashTrade_NFT_03", "from": "0xNFT_WashTrader_A", "to": "0xNFT_WashTrader_B", "value": 11.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-02-10T11:00:00.000Z" } },
+            { "blockNum": "0xf00D03", "uniqueId": "0xTx_WashTrade_4",  "hash": "0xTxHash_WashTrade_NFT_04", "from": "0xNFT_WashTrader_B", "to": "0xNFT_WashTrader_A", "value": 12.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-02-10T11:30:00.000Z" } },
+            { "blockNum": "0xf00D04", "uniqueId": "0xTx_WashTrade_5",  "hash": "0xTxHash_WashTrade_NFT_05", "from": "0xNFT_WashTrader_A", "to": "0xNFT_WashTrader_C", "value": 15.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-02-10T12:00:00.000Z" } },
+            { "blockNum": "0xf00D05", "uniqueId": "0xTx_WashTrade_6",  "hash": "0xTxHash_WashTrade_NFT_06", "from": "0xNFT_WashTrader_C", "to": "0xNFT_WashTrader_A", "value": 15.5, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-02-10T12:30:00.000Z" } },
+            { "blockNum": "0xf00D05", "uniqueId": "0xTx_WashTrade_6b", "hash": "0xTxHash_WashTrade_NFT_06b","from": "0xNFT_WashTrader_A", "to": "0xBlacklist_Known_Scammer", "value": 5.0,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-02-10T13:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00E00",
+                "uniqueId": "0xTx_Innocent_1",
+                "hash": "0xTxHash_Innocent_01",
+                "from": "0xInnocent_Grandma_Wallet",
+                "to": "0xInnocent_Grandson_Wallet",
+                "value": 0.05,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-03-01T08:00:00.000Z" }
+            },
+            { "blockNum": "0xf00E01", "uniqueId": "0xTx_Innocent_2", "hash": "0xTxHash_Innocent_02", "from": "0xInnocent_Grandson_Wallet", "to": "0xInnocent_Coffee_Shop",      "value": 0.01, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-01T10:00:00.000Z" } },
+            { "blockNum": "0xf00E02", "uniqueId": "0xTx_Innocent_3", "hash": "0xTxHash_Innocent_03", "from": "0xInnocent_Coffee_Shop",    "to": "0xInnocent_Supplier_Wallet", "value": 0.5,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-02T08:00:00.000Z" } },
+
+            {
+                "blockNum": "0xf00F00",
+                "uniqueId": "0xTx_BotBurst_1",
+                "hash": "0xTxHash_BotSwap_01",
+                "from": "0xDEX_Arbitrage_Bot",
+                "to": "0xUniswap_V3_Pool",
+                "value": 50.0,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-03-10T14:00:00.000Z" }
+            },
+            { "blockNum": "0xf00F00", "uniqueId": "0xTx_BotBurst_2",  "hash": "0xTxHash_BotSwap_02", "from": "0xDEX_Arbitrage_Bot", "to": "0xUniswap_V3_Pool", "value": 50.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-10T14:00:05.000Z" } },
+            { "blockNum": "0xf00F00", "uniqueId": "0xTx_BotBurst_3",  "hash": "0xTxHash_BotSwap_03", "from": "0xDEX_Arbitrage_Bot", "to": "0xUniswap_V3_Pool", "value": 50.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-10T14:00:10.000Z" } },
+            { "blockNum": "0xf00F00", "uniqueId": "0xTx_BotBurst_4",  "hash": "0xTxHash_BotSwap_04", "from": "0xDEX_Arbitrage_Bot", "to": "0xUniswap_V3_Pool", "value": 50.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-10T14:00:15.000Z" } },
+            { "blockNum": "0xf00F00", "uniqueId": "0xTx_BotBurst_5",  "hash": "0xTxHash_BotSwap_05", "from": "0xDEX_Arbitrage_Bot", "to": "0xUniswap_V3_Pool", "value": 50.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-10T14:00:20.000Z" } },
+            { "blockNum": "0xf00F00", "uniqueId": "0xTx_BotBurst_6",  "hash": "0xTxHash_BotSwap_06", "from": "0xDEX_Arbitrage_Bot", "to": "0xCurve_Finance_Pool", "value": 30.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-10T14:00:25.000Z" } },
+            { "blockNum": "0xf00F00", "uniqueId": "0xTx_BotBurst_7",  "hash": "0xTxHash_BotSwap_07", "from": "0xDEX_Arbitrage_Bot", "to": "0xCurve_Finance_Pool", "value": 30.0, "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-10T14:00:30.000Z" } },
+            { "blockNum": "0xf00F00", "uniqueId": "0xTx_BotBurst_8",  "hash": "0xTxHash_BotSwap_08", "from": "0xDEX_Arbitrage_Bot", "to": "0xBlacklist_Alpha",      "value": 5.0,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-10T14:01:00.000Z" } },
+
+            {
+                "blockNum": "0xf01000",
+                "uniqueId": "0xTx_DarkWeb_1",
+                "hash": "0xTxHash_DarkWeb_Service_01",
+                "from": "0xDarkWeb_Buyer_01",
+                "to": "0xBlacklist_DarkWeb_Market",
+                "value": 0.5,
+                "asset": "ETH",
+                "category": "external",
+                "metadata": { "blockTimestamp": "2025-03-15T03:00:00.000Z" }
+            },
+            { "blockNum": "0xf01000", "uniqueId": "0xTx_DarkWeb_2",  "hash": "0xTxHash_DarkWeb_Service_02", "from": "0xDarkWeb_Buyer_02", "to": "0xBlacklist_DarkWeb_Market", "value": 0.3,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-15T03:10:00.000Z" } },
+            { "blockNum": "0xf01000", "uniqueId": "0xTx_DarkWeb_3",  "hash": "0xTxHash_DarkWeb_Service_03", "from": "0xDarkWeb_Buyer_03", "to": "0xBlacklist_DarkWeb_Market", "value": 0.8,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-15T03:20:00.000Z" } },
+            { "blockNum": "0xf01001", "uniqueId": "0xTx_DarkWeb_4",  "hash": "0xTxHash_DarkWeb_Cashout_01", "from": "0xBlacklist_DarkWeb_Market", "to": "0xDarkWeb_Cashout_01","value": 1.5,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-16T10:00:00.000Z" } },
+            { "blockNum": "0xf01002", "uniqueId": "0xTx_DarkWeb_5",  "hash": "0xTxHash_DarkWeb_Cashout_02", "from": "0xDarkWeb_Cashout_01",      "to": "0xFake_KYC_Exchange",  "value": 1.4,  "asset": "ETH", "category": "external", "metadata": { "blockTimestamp": "2025-03-17T08:00:00.000Z" } }
         ]
     }
 }
+

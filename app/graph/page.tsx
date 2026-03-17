@@ -102,6 +102,18 @@ export default function GraphPage() {
     const [blacklistNote, setBlacklistNote] = useState('');
     const [isAddingToBlacklist, setIsAddingToBlacklist] = useState(false);
 
+    // Exempt State
+    const [exemptAddresses, setExemptAddresses] = useState<string[]>([]);
+    const [showExemptModal, setShowExemptModal] = useState(false);
+    const [exemptNote, setExemptNote] = useState('');
+    const [isAddingToExempt, setIsAddingToExempt] = useState(false);
+
+    // Sidebar State
+    const [isBlacklistSidebarOpen, setIsBlacklistSidebarOpen] = useState(false);
+    const [manualBlacklistAddress, setManualBlacklistAddress] = useState('');
+    const [sidebarTab, setSidebarTab] = useState<'blacklist' | 'exempt'>('blacklist');
+    const [sidebarSearchTerm, setSidebarSearchTerm] = useState('');
+
     // Path Discovery State
     const [startWallet, setStartWallet] = useState('');
     const [endWallet, setEndWallet] = useState('');
@@ -222,7 +234,7 @@ export default function GraphPage() {
             setBlacklistAddresses(newBlacklist);
 
             // Recalculate risk scores with new blacklist
-            const riskResults = calculateRiskScores(data.nodes, data.links, newBlacklist);
+            const riskResults = calculateRiskScores(data.nodes, data.links, newBlacklist, exemptAddresses);
 
             // Update nodes IN-PLACE to preserve x,y positions (don't create new objects)
             data.nodes.forEach(node => {
@@ -248,22 +260,102 @@ export default function GraphPage() {
         }
     };
 
-    // Handle removing address from blacklist
-    const handleRemoveFromBlacklist = async () => {
-        if (!selectedNode || selectedNode.group === 'Transaction') return;
+    // Handle adding manual address to blacklist from sidebar
+    const handleManualAddBlacklist = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!manualBlacklistAddress) return;
 
         setIsAddingToBlacklist(true);
         try {
-            await axios.delete(`/api/blacklist?address=${encodeURIComponent(selectedNode.id)}`);
+            await axios.post('/api/blacklist', {
+                address: manualBlacklistAddress,
+                note: 'Manually added via sidebar'
+            });
+
+            const newBlacklist = [...blacklistAddresses, manualBlacklistAddress.toLowerCase()];
+            setBlacklistAddresses(newBlacklist);
+
+            const riskResults = calculateRiskScores(data.nodes, data.links, newBlacklist, exemptAddresses);
+
+            data.nodes.forEach(node => {
+                const risk = riskResults.get(node.id.toLowerCase());
+                if (risk) {
+                    node.riskScore = Math.min(risk.score, 100);
+                    node.riskReasons = Array.from(risk.reasons);
+                }
+            });
+
+            setData({ nodes: [...data.nodes], links: data.links });
+            setManualBlacklistAddress('');
+            console.log('[BLACKLIST] Manually Added:', manualBlacklistAddress);
+        } catch (err: any) {
+            console.error('Failed to add to blacklist:', err);
+            alert(err.response?.data?.error || 'Failed to add to blacklist');
+        } finally {
+            setIsAddingToBlacklist(false);
+        }
+    };
+
+    // Handle adding manual address to exempt (DApp) from sidebar
+    const handleManualAddExempt = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!manualBlacklistAddress) return;
+
+        setIsAddingToExempt(true);
+        try {
+            await axios.post('/api/exempt', {
+                address: manualBlacklistAddress,
+                note: 'Manually added via sidebar'
+            });
+
+            const newExempt = [...exemptAddresses, manualBlacklistAddress.toLowerCase()];
+            setExemptAddresses(newExempt);
+
+            const targetNode = data.nodes.find(n => n.id.toLowerCase() === manualBlacklistAddress.toLowerCase());
+            if (targetNode) {
+                targetNode.group = 'DApp';
+            }
+
+            const riskResults = calculateRiskScores(data.nodes, data.links, blacklistAddresses, newExempt);
+
+            data.nodes.forEach(node => {
+                const risk = riskResults.get(node.id.toLowerCase());
+                if (risk) {
+                    node.riskScore = Math.min(risk.score, 100);
+                    node.riskReasons = Array.from(risk.reasons);
+                } else {
+                    node.riskScore = 0;
+                    node.riskReasons = [];
+                }
+            });
+
+            setData({ nodes: [...data.nodes], links: data.links });
+            setManualBlacklistAddress('');
+            console.log('[EXEMPT] Manually Added:', manualBlacklistAddress);
+        } catch (err: any) {
+            console.error('Failed to add to exempt:', err);
+            alert(err.response?.data?.error || 'Failed to add to exempt list');
+        } finally {
+            setIsAddingToExempt(false);
+        }
+    };
+
+    // Handle removing address from blacklist
+    const handleRemoveFromBlacklist = async (addressToRemove: string) => {
+        if (!addressToRemove) return;
+
+        setIsAddingToBlacklist(true);
+        try {
+            await axios.delete(`/api/blacklist?address=${encodeURIComponent(addressToRemove)}`);
 
             // Remove from local state
             const newBlacklist = blacklistAddresses.filter(
-                addr => addr.toLowerCase() !== selectedNode.id.toLowerCase()
+                addr => addr.toLowerCase() !== addressToRemove.toLowerCase()
             );
             setBlacklistAddresses(newBlacklist);
 
             // Recalculate risk scores with updated blacklist
-            const riskResults = calculateRiskScores(data.nodes, data.links, newBlacklist);
+            const riskResults = calculateRiskScores(data.nodes, data.links, newBlacklist, exemptAddresses);
 
             // Update nodes IN-PLACE to preserve positions
             data.nodes.forEach(node => {
@@ -282,12 +374,105 @@ export default function GraphPage() {
             setShowBlacklistModal(false);
             setSelectedNode(null);
 
-            console.log('[BLACKLIST] Removed:', selectedNode.id);
+            console.log('[BLACKLIST] Removed:', addressToRemove);
         } catch (err: any) {
             console.error('Failed to remove from blacklist:', err);
             alert(err.response?.data?.error || 'Failed to remove from blacklist');
         } finally {
             setIsAddingToBlacklist(false);
+        }
+    };
+
+    // Handle adding address to Exempt list (DApp/Exchange)
+    const handleAddToExempt = async () => {
+        if (!selectedNode || selectedNode.group === 'Transaction') return;
+
+        setIsAddingToExempt(true);
+        try {
+            await axios.post('/api/exempt', {
+                address: selectedNode.id,
+                note: exemptNote
+            });
+
+            // Add to local state
+            const newExempt = [...exemptAddresses, selectedNode.id.toLowerCase()];
+            setExemptAddresses(newExempt);
+
+            // Update the node group locally so the utility ignores it
+            const targetNode = data.nodes.find(n => n.id.toLowerCase() === selectedNode.id.toLowerCase());
+            if (targetNode) {
+                targetNode.group = 'DApp'; // Mark as Exempt friendly
+            }
+
+            // Recalculate risk scores
+            const riskResults = calculateRiskScores(data.nodes, data.links, blacklistAddresses, newExempt);
+
+            // Update nodes
+            data.nodes.forEach(node => {
+                const risk = riskResults.get(node.id.toLowerCase());
+                if (risk) {
+                    node.riskScore = Math.min(risk.score, 100);
+                    node.riskReasons = Array.from(risk.reasons);
+                } else {
+                    node.riskScore = 0;
+                    node.riskReasons = [];
+                }
+            });
+
+            setData({ nodes: [...data.nodes], links: data.links });
+            setShowExemptModal(false);
+            setExemptNote('');
+            setSelectedNode(null);
+        } catch (err: any) {
+            console.error('Failed to add to exempt:', err);
+            alert(err.response?.data?.error || 'Failed to add to exempt list');
+        } finally {
+            setIsAddingToExempt(false);
+        }
+    };
+
+    // Handle removing address from Exempt list
+    const handleRemoveFromExempt = async (addressToRemove: string) => {
+        if (!addressToRemove) return;
+
+        setIsAddingToExempt(true);
+        try {
+            await axios.delete(`/api/exempt?address=${encodeURIComponent(addressToRemove)}`);
+
+            // Remove from local state
+            const newExempt = exemptAddresses.filter(
+                addr => addr.toLowerCase() !== addressToRemove.toLowerCase()
+            );
+            setExemptAddresses(newExempt);
+
+            // Reset node group locally if it was overridden
+            const targetNode = data.nodes.find(n => n.id.toLowerCase() === addressToRemove.toLowerCase());
+            if (targetNode && targetNode.group === 'DApp') {
+                targetNode.group = 'Wallet';
+            }
+
+            // Recalculate risk scores
+            const riskResults = calculateRiskScores(data.nodes, data.links, blacklistAddresses, newExempt);
+
+            data.nodes.forEach(node => {
+                const risk = riskResults.get(node.id.toLowerCase());
+                if (risk) {
+                    node.riskScore = Math.min(risk.score, 100);
+                    node.riskReasons = Array.from(risk.reasons);
+                } else {
+                    node.riskScore = 0;
+                    node.riskReasons = [];
+                }
+            });
+
+            setData({ nodes: [...data.nodes], links: data.links });
+            setShowExemptModal(false);
+            setSelectedNode(null);
+        } catch (err: any) {
+            console.error('Failed to remove from exempt:', err);
+            alert(err.response?.data?.error || 'Failed to remove from exempt');
+        } finally {
+            setIsAddingToExempt(false);
         }
     };
 
@@ -416,11 +601,12 @@ export default function GraphPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch data in parallel (including blacklist)
-                const [graphResponse, tagsResponse, blacklistResponse] = await axios.all([
+                // Fetch data in parallel (including lists)
+                const [graphResponse, tagsResponse, blacklistResponse, exemptResponse] = await axios.all([
                     axios.get('/api/graph'),
                     axios.get('/csvjson.json'), // Using this for tagging
-                    axios.get('/api/blacklist')
+                    axios.get('/api/blacklist'),
+                    axios.get('/api/exempt')
                 ]);
 
                 const graphData = graphResponse.data;
@@ -430,6 +616,10 @@ export default function GraphPage() {
                 const fetchedBlacklist = (blacklistResponse.data.blacklist || []).map((b: any) => b.address);
                 setBlacklistAddresses(fetchedBlacklist);
                 console.log('[PAGE] Loaded blacklist:', fetchedBlacklist.length, 'addresses');
+
+                // Store exempt addresses
+                const fetchedExempt = (exemptResponse.data.exemptList || []).map((e: any) => e.address);
+                setExemptAddresses(fetchedExempt);
 
                 // Process Nodes
                 const processedNodes = graphData.nodes.map((node: GraphNode) => {
@@ -448,6 +638,12 @@ export default function GraphPage() {
                             else if (nameLower.includes('uniswap')) node.img = 'https://cryptologos.cc/logos/uniswap-uni-logo.png?v=025';
                             else if (nameLower.includes('ethereum')) node.img = 'https://cryptologos.cc/logos/ethereum-eth-logo.png?v=025';
                         }
+
+                        // Force Exempt nodes from database to have the DApp group
+                        if (fetchedExempt.includes(node.id.toLowerCase())) {
+                            node.group = 'DApp';
+                        }
+
                     } else if (node.group === 'Transaction') {
                         // Maybe give transactions a specific icon?
                     }
@@ -504,7 +700,7 @@ export default function GraphPage() {
 
 
                 // Apply Risk Scoring (External Utility) - with dynamic blacklist
-                const riskResults = calculateRiskScores(processedNodes, graphData.links, fetchedBlacklist);
+                const riskResults = calculateRiskScores(processedNodes, graphData.links, fetchedBlacklist, fetchedExempt);
                 console.log("[PAGE] Risk Calculation Complete. Map Size:", riskResults.size);
                 if (riskResults.size > 0) {
                     const firstKey = riskResults.keys().next().value;
@@ -876,6 +1072,15 @@ export default function GraphPage() {
 
                     {/* Right Controls */}
                     <div className="flex items-center gap-3 pointer-events-auto">
+                        <button
+                            onClick={() => setIsBlacklistSidebarOpen(!isBlacklistSidebarOpen)}
+                            className={`bg-gray-800/80 backdrop-blur-md border border-gray-700 p-2 rounded-lg transition-colors ${isBlacklistSidebarOpen ? 'text-red-400 border-red-500/50' : 'text-gray-300 hover:text-white hover:bg-gray-700'}`}
+                            title="Manage Blacklist"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </button>
                         {/* <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-lg">
                             <ShareIcon />
                             Share
@@ -895,6 +1100,138 @@ export default function GraphPage() {
                     </div>
                 </div>
             </header>
+
+            {/* --- NODE MANAGEMENT SIDEBAR (Blacklist & Exempt) --- */}
+            {isBlacklistSidebarOpen && (
+                <div className="absolute top-0 right-0 bottom-0 w-[400px] max-w-[90vw] bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 z-40 flex flex-col shadow-2xl animate-fade-in-right pointer-events-auto">
+                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 shrink-0">
+                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                            Node Management
+                        </h2>
+                        <button onClick={() => setIsBlacklistSidebarOpen(false)} className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-800 transition-colors">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex border-b border-gray-800 bg-gray-900/50 p-2 gap-2 shrink-0">
+                        <button
+                            onClick={() => setSidebarTab('blacklist')}
+                            className={`flex-[0.5] py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${sidebarTab === 'blacklist' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'}`}
+                        >
+                            <ShieldExclamationIcon />
+                            Blacklist
+                        </button>
+                        <button
+                            onClick={() => setSidebarTab('exempt')}
+                            className={`flex-[0.5] py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${sidebarTab === 'exempt' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'}`}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                            DApp/Exempt
+                        </button>
+                    </div>
+
+                    {/* Search & Add Section */}
+                    <div className="p-4 border-b border-gray-800 shrink-0">
+                        {/* Search Bar */}
+                        <div className="relative mb-4">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <SearchIcon />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder={`Search ${sidebarTab === 'blacklist' ? 'Blacklist' : 'DApps'}...`}
+                                value={sidebarSearchTerm}
+                                onChange={(e) => setSidebarSearchTerm(e.target.value)}
+                                className="w-full bg-gray-800 border border-gray-700 text-sm rounded-lg pl-10 pr-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                            />
+                        </div>
+
+                        {/* Add Manual */}
+                        <form onSubmit={sidebarTab === 'blacklist' ? handleManualAddBlacklist : handleManualAddExempt} className="flex flex-col gap-2">
+                            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                                Add to {sidebarTab === 'blacklist' ? 'Blacklist' : 'DApp'} Manually
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={manualBlacklistAddress}
+                                    onChange={(e) => setManualBlacklistAddress(e.target.value)}
+                                    placeholder="0x..."
+                                    className={`flex-1 bg-gray-800 border ${sidebarTab === 'blacklist' ? 'border-gray-700 focus:border-red-500' : 'border-gray-700 focus:border-blue-500'} text-sm rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none font-mono transition-colors`}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={sidebarTab === 'blacklist' ? (isAddingToBlacklist || !manualBlacklistAddress) : (isAddingToExempt || !manualBlacklistAddress)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${sidebarTab === 'blacklist'
+                                            ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/40'
+                                            : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40'
+                                        }`}
+                                >
+                                    {isAddingToBlacklist || isAddingToExempt ? '...' : 'Add'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* List Section */}
+                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-[10px] text-gray-500 font-bold tracking-wider uppercase">
+                                Current {sidebarTab === 'blacklist' ? 'Blacklist' : 'DApps'}
+                                {sidebarSearchTerm && ' (Filtered)'}
+                            </h3>
+                            <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded text-gray-400 font-mono">
+                                {sidebarTab === 'blacklist'
+                                    ? blacklistAddresses.filter(a => a.toLowerCase().includes(sidebarSearchTerm.toLowerCase())).length
+                                    : exemptAddresses.filter(a => a.toLowerCase().includes(sidebarSearchTerm.toLowerCase())).length}
+                            </span>
+                        </div>
+
+                        {(() => {
+                            const activeSource = sidebarTab === 'blacklist' ? blacklistAddresses : exemptAddresses;
+                            const filteredList = activeSource.filter(addr =>
+                                addr.toLowerCase().includes(sidebarSearchTerm.toLowerCase())
+                            );
+
+                            if (activeSource.length === 0) {
+                                return <p className="text-sm text-gray-500 italic text-center mt-8">No addresses mapped.</p>;
+                            }
+
+                            if (filteredList.length === 0) {
+                                return <p className="text-sm text-gray-500 italic text-center mt-8">No matches found.</p>;
+                            }
+
+                            return (
+                                <ul className="space-y-2">
+                                    {filteredList.map((address) => (
+                                        <li key={address} className={`bg-gray-800/40 border border-gray-800/80 p-3 rounded-lg flex items-center justify-between group transition-colors ${sidebarTab === 'blacklist' ? 'hover:border-red-500/30 hover:bg-red-500/5' : 'hover:border-blue-500/30 hover:bg-blue-500/5'}`}>
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className={`w-2 h-2 rounded-full shrink-0 ${sidebarTab === 'blacklist' ? 'bg-red-500' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]'}`}></div>
+                                                <p className="text-sm text-gray-300 font-mono break-all line-clamp-1" title={address}>
+                                                    {address}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => sidebarTab === 'blacklist' ? handleRemoveFromBlacklist(address) : handleRemoveFromExempt(address)}
+                                                disabled={isAddingToBlacklist || isAddingToExempt}
+                                                className={`p-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-2 rounded ${sidebarTab === 'blacklist'
+                                                        ? 'text-gray-500 hover:text-red-400 hover:bg-red-500/20'
+                                                        : 'text-gray-500 hover:text-blue-400 hover:bg-blue-500/20'
+                                                    }`}
+                                                title={`Remove from ${sidebarTab === 'blacklist' ? 'Blacklist' : 'DApp/Exempt'}`}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            );
+                        })()}
+                    </div>
+                </div>
+            )}
 
             {/* --- GRAPH ENGINE --- */}
             {loading && (
@@ -960,7 +1297,11 @@ export default function GraphPage() {
                         let riskColor = 'text-green-500';
                         let riskBg = 'bg-green-500/10 border-green-500/30';
 
-                        if (score >= 100) {
+                        if (node.group === 'DApp') {
+                            riskLevel = 'EXEMPT';
+                            riskColor = 'text-blue-400';
+                            riskBg = 'bg-blue-500/10 border-blue-500/30';
+                        } else if (score >= 100) {
                             riskLevel = 'CRITICAL';
                             riskColor = 'text-red-500';
                             riskBg = 'bg-red-500/10 border-red-500/30';
@@ -1177,118 +1518,137 @@ export default function GraphPage() {
                 </div>
             </div>
 
-            {/* --- BLACKLIST MODAL --- */}
+            {/* --- MANAGE NODE MODAL (Blacklist + Exempt) --- */}
             {showBlacklistModal && selectedNode && (() => {
                 const isInBlacklist = blacklistAddresses.some(
                     addr => addr.toLowerCase() === selectedNode.id.toLowerCase()
                 );
 
+                const isExempt = exemptAddresses.some(
+                    addr => addr.toLowerCase() === selectedNode.id.toLowerCase()
+                );
+
                 return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                        <div className={`bg-[#0a0a14] border ${isInBlacklist ? 'border-green-500/30' : 'border-red-500/30'} rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw]`}>
+                        <div className={`bg-[#0a0a14] border ${isInBlacklist ? 'border-red-500/30' : isExempt ? 'border-blue-500/30' : 'border-gray-700'} rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] p-6 w-[450px] max-w-[90vw]`}>
 
                             {/* Header */}
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className={`w-10 h-10 rounded-full ${isInBlacklist ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} flex items-center justify-center`}>
-                                    <ShieldExclamationIcon />
+                            <div className="flex items-center gap-3 mb-4 border-b border-gray-800 pb-4">
+                                <div className={`w-10 h-10 rounded-full ${isInBlacklist ? 'bg-red-500/20 text-red-500' : isExempt ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-400'} flex items-center justify-center shrink-0`}>
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-bold text-lg">
-                                        {isInBlacklist ? 'Remove from Blacklist' : 'Add to Blacklist'}
-                                    </h3>
-                                    <p className="text-gray-400 text-xs">
-                                        {isInBlacklist ? 'This address is currently blacklisted' : 'Mark this address as risky'}
-                                    </p>
+                                    <h3 className="text-white font-bold text-lg">Manage Node Roles</h3>
+                                    <p className="text-gray-400 text-xs">Configure how this address affects risk scoring</p>
                                 </div>
                             </div>
 
                             {/* Address Display */}
-                            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 mb-4">
-                                <div className="text-gray-400 text-[10px] tracking-wider mb-1">WALLET ADDRESS</div>
-                                <div className="text-white font-mono text-sm break-all">{selectedNode.id}</div>
+                            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 mb-6 relative overflow-hidden">
+                                {/* Status Indicator Line */}
+                                <div className={`absolute top-0 left-0 w-1 h-full ${isInBlacklist ? 'bg-red-500' : isExempt ? 'bg-blue-500' : 'bg-transparent'}`}></div>
+
+                                <div className="text-gray-400 text-[10px] tracking-wider mb-1 pl-2">WALLET ADDRESS</div>
+                                <div className="text-white font-mono text-sm break-all pl-2">{selectedNode.id}</div>
                                 {selectedNode.tag && (
-                                    <div className="mt-2 text-amber-400 text-xs">
-                                        Tag: {selectedNode.tag}
+                                    <div className="mt-2 text-amber-400 text-xs pl-2">
+                                        Known Tag: {selectedNode.tag}
                                     </div>
                                 )}
-                                {isInBlacklist && (
-                                    <div className="mt-2 px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded inline-block">
-                                        ⚠ Currently Blacklisted
-                                    </div>
-                                )}
+                                <div className="mt-2 flex gap-2 pl-2">
+                                    {isInBlacklist && (
+                                        <div className="px-2 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold uppercase rounded border border-red-500/30">
+                                            🚨 Blacklisted
+                                        </div>
+                                    )}
+                                    {isExempt && (
+                                        <div className="px-2 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase rounded border border-blue-500/30">
+                                            🛡️ Exempt (DApp/Hub)
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Note Input - Only show for adding */}
-                            {!isInBlacklist && (
-                                <div className="mb-4">
-                                    <label className="text-gray-400 text-xs block mb-2">Note (optional)</label>
-                                    <input
-                                        type="text"
-                                        value={blacklistNote}
-                                        onChange={(e) => setBlacklistNote(e.target.value)}
-                                        placeholder="e.g., Known scam wallet, Phishing..."
-                                        className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red-500/50 transition-colors"
-                                    />
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                {/* EXEMPT CARD */}
+                                <div className={`border ${isExempt ? 'border-blue-500 bg-blue-500/10' : 'border-gray-800 bg-gray-900/50'} rounded-lg p-4 flex flex-col justify-between transition-colors`}>
+                                    <div>
+                                        <div className="text-blue-400 font-bold mb-1 flex items-center gap-2">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                            DApp / Exchange
+                                        </div>
+                                        <p className="text-gray-400 text-[10px] mb-4 leading-relaxed">
+                                            Exempts this high-volume node from triggering <strong>Fan-in/Fan-out</strong> alerts and propagating risk to innocent users.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (isInBlacklist) {
+                                                alert("Cannot mark a Blacklisted address as Exempt. Remove Blacklist status first.");
+                                                return;
+                                            }
+                                            isExempt ? handleRemoveFromExempt(selectedNode.id) : handleAddToExempt();
+                                        }}
+                                        disabled={isAddingToExempt || isAddingToBlacklist}
+                                        className={`w-full py-1.5 rounded text-xs font-bold transition-colors ${isExempt
+                                                ? 'bg-transparent border border-blue-500 text-blue-400 hover:bg-blue-500/10'
+                                                : 'bg-blue-600 hover:bg-blue-500 text-white'
+                                            }`}
+                                    >
+                                        {isAddingToExempt ? 'Saving...' : (isExempt ? 'Remove Exemption' : 'Mark as DApp')}
+                                    </button>
                                 </div>
-                            )}
 
-                            {/* Warning/Info */}
-                            <div className={`${isInBlacklist ? 'bg-green-500/10 border-green-500/20 text-green-300' : 'bg-red-500/10 border-red-500/20 text-red-300'} border rounded-lg p-3 mb-4 text-xs`}>
-                                {isInBlacklist ? (
-                                    <><strong>Info:</strong> Removing this address will recalculate risk scores for all connected addresses.</>
-                                ) : (
-                                    <><strong>Warning:</strong> Adding this address to the blacklist will mark it as high-risk (100 score) and propagate risk to connected addresses.</>
-                                )}
+                                {/* BLACKLIST CARD */}
+                                <div className={`border ${isInBlacklist ? 'border-red-500 bg-red-500/10' : 'border-gray-800 bg-gray-900/50'} rounded-lg p-4 flex flex-col justify-between transition-colors`}>
+                                    <div>
+                                        <div className="text-red-400 font-bold mb-1 flex items-center gap-2">
+                                            <ShieldExclamationIcon />
+                                            Blacklist
+                                        </div>
+                                        <p className="text-gray-400 text-[10px] mb-4 leading-relaxed">
+                                            Marks this node as a known threat (100 score). Risk will aggressively propagate to related wallets.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (isExempt) {
+                                                alert("Cannot Blacklist an Exempt address. Remove DApp status first.");
+                                                return;
+                                            }
+                                            isInBlacklist ? handleRemoveFromBlacklist(selectedNode.id) : handleAddToBlacklist();
+                                        }}
+                                        disabled={isAddingToExempt || isAddingToBlacklist}
+                                        className={`w-full py-1.5 rounded text-xs font-bold transition-colors ${isInBlacklist
+                                                ? 'bg-transparent border border-red-500 text-red-400 hover:bg-red-500/10'
+                                                : 'bg-red-600 hover:bg-red-500 text-white'
+                                            }`}
+                                    >
+                                        {isAddingToBlacklist ? 'Saving...' : (isInBlacklist ? 'Remove Blacklist' : 'Add to Blacklist')}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-3">
+                            <div className="flex justify-end pt-4 border-t border-gray-800">
                                 <button
                                     onClick={() => {
                                         setShowBlacklistModal(false);
                                         setSelectedNode(null);
                                         setBlacklistNote('');
+                                        setExemptNote('');
                                     }}
-                                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+                                    className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
                                 >
-                                    Cancel
+                                    Close
                                 </button>
-                                {isInBlacklist ? (
-                                    <button
-                                        onClick={handleRemoveFromBlacklist}
-                                        disabled={isAddingToBlacklist}
-                                        className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        {isAddingToBlacklist ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                                Removing...
-                                            </>
-                                        ) : (
-                                            <>Remove from Blacklist</>
-                                        )}
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={handleAddToBlacklist}
-                                        disabled={isAddingToBlacklist}
-                                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        {isAddingToBlacklist ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                                Adding...
-                                            </>
-                                        ) : (
-                                            <>Add to Blacklist</>
-                                        )}
-                                    </button>
-                                )}
                             </div>
                         </div>
                     </div>
                 );
             })()}
+
+
 
         </main>
     );

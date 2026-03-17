@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env' });
 
 const URI = process.env.NEO4J_URI || '';
-const USER = process.env.NEO4J_USERNAME || '';
+const USER = process.env.NEO4J_USER || '';
 const PASSWORD = process.env.NEO4J_PASSWORD || '';
 
 if (!URI || !USER || !PASSWORD) {
