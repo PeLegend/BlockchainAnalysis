@@ -31,14 +31,14 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#02020a] text-gray-100 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <main className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-200/40 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-200/40 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="w-full max-w-lg z-10 font-sans">
         {/* Glassmorphism Container */}
-        <div className="bg-[#0a0a14]/60 backdrop-blur-2xl rounded-2xl border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-10 relative overflow-hidden group">
+        <div className="bg-white/70 backdrop-blur-2xl rounded-2xl border border-slate-200 shadow-xl p-10 relative overflow-hidden group">
           {/* Subtle Glow Border Effect */}
           <div className="absolute inset-0 border border-transparent group-hover:border-blue-500/10 transition-colors duration-700 pointer-events-none rounded-2xl"></div>
 
@@ -64,7 +64,7 @@ export default function Home() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   disabled={useMock}
-                  className={`w-full bg-transparent border-b border-gray-800 py-3 font-mono text-sm text-blue-100 placeholder-gray-700 focus:outline-none focus:border-blue-500/50 transition-all duration-300 ${useMock ? 'opacity-30 cursor-not-allowed' : ''
+                  className={`w-full bg-transparent border-b border-slate-300 py-3 font-mono text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500/50 transition-all duration-300 ${useMock ? 'opacity-30 cursor-not-allowed' : ''
                     }`}
                   placeholder="0x..."
                 />
@@ -77,7 +77,7 @@ export default function Home() {
               <label className="block text-[10px] font-black text-gray-500 mb-4 uppercase tracking-[0.2em]">
                 Analysis Depth (Hops)
               </label>
-              <div className="bg-black/40 p-1 rounded-xl border border-white/5 flex relative">
+              <div className="bg-white/60 p-1 rounded-xl border border-slate-200 flex relative">
                 {/* Active Indicator Slide */}
                 <div
                   className="absolute top-1 bottom-1 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-lg border border-blue-500/30 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)] transition-all duration-300 ease-out z-0"
@@ -113,7 +113,7 @@ export default function Home() {
                   onChange={(e) => setUseMock(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:after:transition-all peer-checked:bg-blue-600"></div>
                 <span className="ml-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Use Mock Data</span>
               </label>
             </div>
@@ -126,7 +126,7 @@ export default function Home() {
                 }`}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 group-hover/btn:scale-105 transition-transform duration-500"></div>
-              <div className="relative bg-[#0a0a14] rounded-[11px] py-4 flex items-center justify-center transition-colors group-hover/btn:bg-transparent">
+              <div className="relative bg-white rounded-[11px] py-4 flex items-center justify-center transition-colors group-hover/btn:bg-transparent">
                 {loading ? (
                   <div className="flex items-center gap-3">
                     <svg className="animate-spin h-4 w-4 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -136,7 +136,7 @@ export default function Home() {
                     <span className="text-xs font-black tracking-widest text-blue-400">ANALYZING...</span>
                   </div>
                 ) : (
-                  <span className="text-xs font-black tracking-[0.2em] text-white">INITIALIZE SCAN</span>
+                  <span className="text-xs font-black tracking-[0.2em] text-slate-800">INITIALIZE SCAN</span>
                 )}
               </div>
             </button>
@@ -146,21 +146,21 @@ export default function Home() {
           {(error || result) && (
             <div className="mt-8 animate-fade-in">
               {error && (
-                <div className="p-4 bg-red-900/10 border border-red-500/20 rounded-xl flex items-start gap-4">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-4">
                   <div className="w-1 h-full bg-red-500 rounded-full"></div>
                   <div>
                     <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Execution Failure</p>
-                    <p className="text-xs text-red-100/70">{error}</p>
+                    <p className="text-xs text-red-800">{error}</p>
                   </div>
                 </div>
               )}
 
               {result && (
-                <div className="p-5 bg-green-900/10 border border-green-500/20 rounded-xl flex flex-col gap-4">
+                <div className="p-5 bg-green-50 border border-green-200 rounded-xl flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-bold text-green-500 uppercase tracking-widest mb-1">Neural Mapping Complete</p>
-                      <p className="text-xs text-green-100/70">Processed <span className="text-white font-bold">{result.count}</span> vector sequences.</p>
+                      <p className="text-xs text-green-800">Processed <span className="text-green-500 font-bold">{result.count}</span> vector sequences.</p>
                     </div>
                     <div className="h-8 w-8 rounded-full border border-green-500/30 flex items-center justify-center">
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
@@ -184,11 +184,11 @@ export default function Home() {
         {/* Footer info */}
         <div className="mt-8 text-center flex flex-col items-center gap-4">
           <div className="flex items-center gap-4">
-            <div className="h-px w-8 bg-gray-800"></div>
-            <div className="text-[9px] text-gray-700 font-mono tracking-widest">Peson Peson Peson</div>
-            <div className="h-px w-8 bg-gray-800"></div>
+            <div className="h-px w-8 bg-slate-300"></div>
+            <div className="text-[9px] text-slate-500 font-mono tracking-widest">Peson Peson Peson</div>
+            <div className="h-px w-8 bg-slate-300"></div>
           </div>
-          <p className="text-gray-700 text-[10px]  leading-tight italic">
+          <p className="text-slate-500 text-[10px]  leading-tight italic">
             *Academic Final Project: For Educational and Forensic Research Purposes Only.
             Algorithm: Iterative Risk Propagation Model.
           </p>

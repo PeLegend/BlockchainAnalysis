@@ -59,13 +59,13 @@ const PRICE_MAP: Record<string, number> = {
 
 // --- Icons (SVG) ---
 const SearchIcon = () => (
-    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
 );
 
 const ShareIcon = () => (
-    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
     </svg>
 );
@@ -842,7 +842,7 @@ export default function GraphPage() {
                 ctx.restore();
 
                 // Add a border/glow
-                ctx.strokeStyle = '#fff';
+                ctx.strokeStyle = '#000';
                 ctx.lineWidth = 0.5;
                 ctx.beginPath();
                 ctx.arc(x, y, size, 0, 2 * Math.PI, false);
@@ -912,7 +912,7 @@ export default function GraphPage() {
             ctx.font = `bold ${fontSize}px Sans-Serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
             ctx.fillText(node.tag || '', x, y + size + 2);
         }
 
@@ -950,7 +950,7 @@ export default function GraphPage() {
             ctx.font = `${nodeFontSize}px monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
             ctx.fillText(label, x, y);
         } else {
             // Draw first 6 chars of ID for ALL Wallets and Path nodes INSIDE the node
@@ -959,13 +959,13 @@ export default function GraphPage() {
             ctx.font = `${size / 1.5}px monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
             ctx.fillText(label, x, y);
         }
     }, [images, pathNodeIds]);
 
     return (
-        <main className="relative w-full h-screen bg-[#050510] text-gray-100 overflow-hidden font-sans selection:bg-blue-500/30">
+        <main className="relative w-full h-screen bg-white text-gray-900 overflow-hidden font-sans selection:bg-blue-500/30">
 
             {/* --- TOP HEADER / FILTER BAR --- */}
             <header className="absolute top-0 left-0 right-0 z-30 p-4 pointer-events-none">
@@ -976,7 +976,7 @@ export default function GraphPage() {
                         {/* Path Discovery Section */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-400 font-bold">PATH FINDER</span>
+                                <span className="text-xs text-gray-600 font-bold">PATH FINDER</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <input
@@ -984,7 +984,7 @@ export default function GraphPage() {
                                     placeholder="Start Wallet (0x...)"
                                     value={startWallet}
                                     onChange={(e) => setStartWallet(e.target.value)}
-                                    className="bg-gray-800/80 backdrop-blur-md border border-gray-700 text-xs rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:border-green-500 transition-colors text-gray-300 placeholder-gray-500 font-mono"
+                                    className="bg-gray-100/80 backdrop-blur-md border border-gray-200 text-xs rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:border-green-500 transition-colors text-gray-700 placeholder-gray-500 font-mono"
                                 />
                                 <span className="text-gray-500">→</span>
                                 <input
@@ -992,14 +992,14 @@ export default function GraphPage() {
                                     placeholder="End Wallet (0x...)"
                                     value={endWallet}
                                     onChange={(e) => setEndWallet(e.target.value)}
-                                    className="bg-gray-800/80 backdrop-blur-md border border-gray-700 text-xs rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:border-green-500 transition-colors text-gray-300 placeholder-gray-500 font-mono"
+                                    className="bg-gray-100/80 backdrop-blur-md border border-gray-200 text-xs rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:border-green-500 transition-colors text-gray-700 placeholder-gray-500 font-mono"
                                 />
                                 <button
                                     onClick={handleFindPath}
                                     disabled={isSearchingPath || !startWallet || !endWallet}
                                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${isSearchingPath || !startWallet || !endWallet
                                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                        : 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/40'
+                                        : 'bg-green-600 hover:bg-green-500 text-gray-900 shadow-lg shadow-green-900/40'
                                         }`}
                                 >
                                     {isSearchingPath ? '🔄 Searching...' : '🔍 Find Path'}
@@ -1007,7 +1007,7 @@ export default function GraphPage() {
                                 {pathResult && (
                                     <button
                                         onClick={handleClearPath}
-                                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all"
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-700 hover:bg-gray-600 text-gray-700 transition-all"
                                     >
                                         ✕ Clear
                                     </button>
@@ -1028,7 +1028,7 @@ export default function GraphPage() {
                                         <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
                                             {pathResult.path.map((addr, idx) => (
                                                 <span key={addr} className="flex items-center gap-1">
-                                                    <span className="px-2 py-0.5 bg-gray-800 rounded text-gray-300">
+                                                    <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-700">
                                                         {addr.slice(0, 6)}...{addr.slice(-4)}
                                                     </span>
                                                     {idx < pathResult.path.length - 1 && (
@@ -1039,7 +1039,7 @@ export default function GraphPage() {
                                         </div>
                                     )}
                                     {pathResult.message && !pathResult.found && (
-                                        <p className="text-xs text-gray-400">{pathResult.message}</p>
+                                        <p className="text-xs text-gray-600">{pathResult.message}</p>
                                     )}
                                 </div>
                             )}
@@ -1049,7 +1049,7 @@ export default function GraphPage() {
                         {/* Filter Chips */}
                         <div className="flex flex-wrap gap-2">
                             {/* Custom USD Filter Input */}
-                            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider border transition-all duration-300 ${minUSD > 0 ? 'bg-blue-900/30 border-blue-500 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-gray-800/50 border-gray-700 text-gray-400'}`}>
+                            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider border transition-all duration-300 ${minUSD > 0 ? 'bg-blue-900/30 border-blue-500 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-gray-100/50 border-gray-200 text-gray-600'}`}>
                                 <span>USD ≥ $</span>
                                 <input
                                     type="number"
@@ -1074,26 +1074,26 @@ export default function GraphPage() {
                     <div className="flex items-center gap-3 pointer-events-auto">
                         <button
                             onClick={() => setIsBlacklistSidebarOpen(!isBlacklistSidebarOpen)}
-                            className={`bg-gray-800/80 backdrop-blur-md border border-gray-700 p-2 rounded-lg transition-colors ${isBlacklistSidebarOpen ? 'text-red-400 border-red-500/50' : 'text-gray-300 hover:text-white hover:bg-gray-700'}`}
+                            className={`bg-gray-100/80 backdrop-blur-md border border-gray-200 p-2 rounded-lg transition-colors ${isBlacklistSidebarOpen ? 'text-red-400 border-red-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-700'}`}
                             title="Manage Blacklist"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </button>
-                        {/* <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-lg">
+                        {/* <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-lg">
                             <ShareIcon />
                             Share
                         </button> */}
                         {/* Toolbar Sidebar Placeholder */}
-                        <div className="flex flex-col bg-gray-800/90 rounded-lg p-1 gap-2 border border-gray-700">
-                            <div className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white cursor-pointer hover:bg-gray-700 rounded">
+                        <div className="flex flex-col bg-gray-100/90 rounded-lg p-1 gap-2 border border-gray-200">
+                            <div className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900 cursor-pointer hover:bg-gray-700 rounded">
                                 <span className="text-lg">⛶</span>
                             </div>
-                            <div className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white cursor-pointer hover:bg-gray-700 rounded">
+                            <div className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900 cursor-pointer hover:bg-gray-700 rounded">
                                 <span className="text-xl">+</span>
                             </div>
-                            <div className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white cursor-pointer hover:bg-gray-700 rounded">
+                            <div className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900 cursor-pointer hover:bg-gray-700 rounded">
                                 <span className="text-xl">-</span>
                             </div>
                         </div>
@@ -1103,29 +1103,29 @@ export default function GraphPage() {
 
             {/* --- NODE MANAGEMENT SIDEBAR (Blacklist & Exempt) --- */}
             {isBlacklistSidebarOpen && (
-                <div className="absolute top-0 right-0 bottom-0 w-[400px] max-w-[90vw] bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 z-40 flex flex-col shadow-2xl animate-fade-in-right pointer-events-auto">
-                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 shrink-0">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                <div className="absolute top-0 right-0 bottom-0 w-[400px] max-w-[90vw] bg-white/95 backdrop-blur-xl border-l border-gray-300 z-40 flex flex-col shadow-2xl animate-fade-in-right pointer-events-auto">
+                    <div className="p-4 border-b border-gray-300 flex justify-between items-center bg-white shrink-0">
+                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                             Node Management
                         </h2>
-                        <button onClick={() => setIsBlacklistSidebarOpen(false)} className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-800 transition-colors">
+                        <button onClick={() => setIsBlacklistSidebarOpen(false)} className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100 transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex border-b border-gray-800 bg-gray-900/50 p-2 gap-2 shrink-0">
+                    <div className="flex border-b border-gray-300 bg-white/50 p-2 gap-2 shrink-0">
                         <button
                             onClick={() => setSidebarTab('blacklist')}
-                            className={`flex-[0.5] py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${sidebarTab === 'blacklist' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'}`}
+                            className={`flex-[0.5] py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${sidebarTab === 'blacklist' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'}`}
                         >
                             <ShieldExclamationIcon />
                             Blacklist
                         </button>
                         <button
                             onClick={() => setSidebarTab('exempt')}
-                            className={`flex-[0.5] py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${sidebarTab === 'exempt' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'}`}
+                            className={`flex-[0.5] py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${sidebarTab === 'exempt' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'}`}
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                             DApp/Exempt
@@ -1133,7 +1133,7 @@ export default function GraphPage() {
                     </div>
 
                     {/* Search & Add Section */}
-                    <div className="p-4 border-b border-gray-800 shrink-0">
+                    <div className="p-4 border-b border-gray-300 shrink-0">
                         {/* Search Bar */}
                         <div className="relative mb-4">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1144,7 +1144,7 @@ export default function GraphPage() {
                                 placeholder={`Search ${sidebarTab === 'blacklist' ? 'Blacklist' : 'DApps'}...`}
                                 value={sidebarSearchTerm}
                                 onChange={(e) => setSidebarSearchTerm(e.target.value)}
-                                className="w-full bg-gray-800 border border-gray-700 text-sm rounded-lg pl-10 pr-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                                className="w-full bg-gray-100 border border-gray-200 text-sm rounded-lg pl-10 pr-3 py-2 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
                             />
                         </div>
 
@@ -1159,14 +1159,14 @@ export default function GraphPage() {
                                     value={manualBlacklistAddress}
                                     onChange={(e) => setManualBlacklistAddress(e.target.value)}
                                     placeholder="0x..."
-                                    className={`flex-1 bg-gray-800 border ${sidebarTab === 'blacklist' ? 'border-gray-700 focus:border-red-500' : 'border-gray-700 focus:border-blue-500'} text-sm rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none font-mono transition-colors`}
+                                    className={`flex-1 bg-gray-100 border ${sidebarTab === 'blacklist' ? 'border-gray-200 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'} text-sm rounded-lg px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none font-mono transition-colors`}
                                 />
                                 <button
                                     type="submit"
                                     disabled={sidebarTab === 'blacklist' ? (isAddingToBlacklist || !manualBlacklistAddress) : (isAddingToExempt || !manualBlacklistAddress)}
                                     className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${sidebarTab === 'blacklist'
-                                            ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/40'
-                                            : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40'
+                                        ? 'bg-red-600 hover:bg-red-500 text-gray-900 shadow-red-900/40'
+                                        : 'bg-blue-600 hover:bg-blue-500 text-gray-900 shadow-blue-900/40'
                                         }`}
                                 >
                                     {isAddingToBlacklist || isAddingToExempt ? '...' : 'Add'}
@@ -1182,7 +1182,7 @@ export default function GraphPage() {
                                 Current {sidebarTab === 'blacklist' ? 'Blacklist' : 'DApps'}
                                 {sidebarSearchTerm && ' (Filtered)'}
                             </h3>
-                            <span className="text-[10px] bg-gray-800 px-2 py-0.5 rounded text-gray-400 font-mono">
+                            <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-600 font-mono">
                                 {sidebarTab === 'blacklist'
                                     ? blacklistAddresses.filter(a => a.toLowerCase().includes(sidebarSearchTerm.toLowerCase())).length
                                     : exemptAddresses.filter(a => a.toLowerCase().includes(sidebarSearchTerm.toLowerCase())).length}
@@ -1206,10 +1206,10 @@ export default function GraphPage() {
                             return (
                                 <ul className="space-y-2">
                                     {filteredList.map((address) => (
-                                        <li key={address} className={`bg-gray-800/40 border border-gray-800/80 p-3 rounded-lg flex items-center justify-between group transition-colors ${sidebarTab === 'blacklist' ? 'hover:border-red-500/30 hover:bg-red-500/5' : 'hover:border-blue-500/30 hover:bg-blue-500/5'}`}>
+                                        <li key={address} className={`bg-gray-100/40 border border-gray-300/80 p-3 rounded-lg flex items-center justify-between group transition-colors ${sidebarTab === 'blacklist' ? 'hover:border-red-500/30 hover:bg-red-500/5' : 'hover:border-blue-500/30 hover:bg-blue-500/5'}`}>
                                             <div className="flex items-center gap-3 overflow-hidden">
                                                 <div className={`w-2 h-2 rounded-full shrink-0 ${sidebarTab === 'blacklist' ? 'bg-red-500' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]'}`}></div>
-                                                <p className="text-sm text-gray-300 font-mono break-all line-clamp-1" title={address}>
+                                                <p className="text-sm text-gray-700 font-mono break-all line-clamp-1" title={address}>
                                                     {address}
                                                 </p>
                                             </div>
@@ -1217,8 +1217,8 @@ export default function GraphPage() {
                                                 onClick={() => sidebarTab === 'blacklist' ? handleRemoveFromBlacklist(address) : handleRemoveFromExempt(address)}
                                                 disabled={isAddingToBlacklist || isAddingToExempt}
                                                 className={`p-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-2 rounded ${sidebarTab === 'blacklist'
-                                                        ? 'text-gray-500 hover:text-red-400 hover:bg-red-500/20'
-                                                        : 'text-gray-500 hover:text-blue-400 hover:bg-blue-500/20'
+                                                    ? 'text-gray-500 hover:text-red-400 hover:bg-red-500/20'
+                                                    : 'text-gray-500 hover:text-blue-400 hover:bg-blue-500/20'
                                                     }`}
                                                 title={`Remove from ${sidebarTab === 'blacklist' ? 'Blacklist' : 'DApp/Exempt'}`}
                                             >
@@ -1244,7 +1244,7 @@ export default function GraphPage() {
                 <ForceGraph2D
                     ref={graphRef}
                     graphData={visibleData}
-                    backgroundColor="#050510"
+                    backgroundColor="#ffffff"
                     nodeLabel={(node: any) => {
                         // Custom Tooltip based on node type
                         if (node.group === 'Transaction') {
@@ -1267,9 +1267,9 @@ export default function GraphPage() {
                             const timeStr = dateObj ? dateObj.toLocaleTimeString() : '';
 
                             return `
-            <div class="px-3 py-2 bg-[#0a0a14]/95 border border-green-500/30 rounded-lg shadow-2xl backdrop-blur-md z-50">
+            <div class="px-3 py-2 bg-white/95 border border-green-500/30 rounded-lg shadow-2xl backdrop-blur-md z-50">
                 <div class="text-green-400 font-bold text-xs tracking-wider mb-1">TRANSACTION VALUE</div>
-                <div class="text-xl font-mono text-white font-bold">
+                <div class="text-xl font-mono text-gray-900 font-bold">
                     ${usdDisplay}
                 </div>
                 <div class="text-gray-500 text-[10px] mt-0.5 font-mono flex justify-between gap-4">
@@ -1277,7 +1277,7 @@ export default function GraphPage() {
                     <span class="opacity-50">${node.id.slice(0, 6)}...</span>
                 </div>
                 ${dateObj ? `
-                <div class="mt-2 text-gray-400 text-[10px] font-mono border-t border-gray-700/50 pt-1 flex justify-between uppercase tracking-wider">
+                <div class="mt-2 text-gray-600 text-[10px] font-mono border-t border-gray-200/50 pt-1 flex justify-between uppercase tracking-wider">
                     <span>${dateStr}</span>
                     <span>${timeStr}</span>
                 </div>
@@ -1320,25 +1320,25 @@ export default function GraphPage() {
                             : '<div class="opacity-50 italic">No anomalies detected</div>';
 
                         const riskHtml = `
-                            <div class="mt-3 pt-2 border-t border-gray-700/50">
+                            <div class="mt-3 pt-2 border-t border-gray-200/50">
                                 <div class="flex items-center justify-between mb-2">
-                                    <div class="text-xs font-bold text-gray-400 tracking-wider">RISK SCORE</div>
+                                    <div class="text-xs font-bold text-gray-600 tracking-wider">RISK SCORE</div>
                                     <div class="px-2 py-0.5 rounded text-[10px] font-bold border ${riskBg} ${riskColor}">
                                         ${score}/100 • ${riskLevel}
                                     </div>
                                 </div>
-                                <div class="text-gray-400 text-[10px] font-mono leading-relaxed max-w-[200px]">
+                                <div class="text-gray-600 text-[10px] font-mono leading-relaxed max-w-[200px]">
                                     ${reasons}
                                 </div>
                             </div>
                         `;
 
                         return `
-            <div class="px-4 py-3 bg-[#0a0a14]/95 border border-gray-700/80 rounded-xl shadow-2xl backdrop-blur-md z-50 min-w-[240px]">
+            <div class="px-4 py-3 bg-white/95 border border-gray-200/80 rounded-xl shadow-2xl backdrop-blur-md z-50 min-w-[240px]">
                 <div class="${color} font-bold text-xs tracking-wider mb-1 flex items-center gap-2">
                     ${sub.toUpperCase()}
                 </div>
-                <div class="text-white text-sm font-medium break-all text-wrap font-mono mb-1">${label}</div>
+                <div class="text-gray-900 text-sm font-medium break-all text-wrap font-mono mb-1">${label}</div>
                 ${riskHtml}
             </div>
             `;
@@ -1412,7 +1412,7 @@ export default function GraphPage() {
                         // Draw background box
                         const textWidth = ctx.measureText(label).width;
                         const padding = 2 / globalScale;
-                        ctx.fillStyle = 'rgba(5, 5, 16, 0.9)';
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                         ctx.fillRect(
                             midX - textWidth / 2 - padding,
                             midY - fontSize / 2 - padding,
@@ -1434,13 +1434,13 @@ export default function GraphPage() {
                 {/* Fixed "Fit to Screen" Container - overflow-hidden, w-full */}
                 <div
                     ref={timelineContainerRef}
-                    className="w-full h-16 bg-[#0a0a14]/90 backdrop-blur-md border-t border-gray-800 relative pointer-events-auto overflow-hidden group select-none"
+                    className="w-full h-16 bg-white/90 backdrop-blur-md border-t border-gray-300 relative pointer-events-auto overflow-hidden group select-none"
                 >
 
                     {/* View Controls */}
                     <div className="absolute top-1 left-2 z-20 flex gap-2 w-full pointer-events-none">
-                        <div className="text-[10px] text-gray-500 font-mono self-center bg-[#050510]/50 px-2 rounded">
-                            RANGE: <span className="text-gray-300 font-bold">
+                        <div className="text-[10px] text-gray-500 font-mono self-center bg-white/50 px-2 rounded">
+                            RANGE: <span className="text-gray-700 font-bold">
                                 {dataRange[0] > 0 ? `${new Date(dataRange[0]).toLocaleDateString()} - ${new Date(dataRange[1]).toLocaleDateString()}` : 'Loading...'}
                             </span>
                         </div>
@@ -1530,26 +1530,26 @@ export default function GraphPage() {
 
                 return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                        <div className={`bg-[#0a0a14] border ${isInBlacklist ? 'border-red-500/30' : isExempt ? 'border-blue-500/30' : 'border-gray-700'} rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] p-6 w-[450px] max-w-[90vw]`}>
+                        <div className={`bg-white border ${isInBlacklist ? 'border-red-500/30' : isExempt ? 'border-blue-500/30' : 'border-gray-200'} rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] p-6 w-[450px] max-w-[90vw]`}>
 
                             {/* Header */}
-                            <div className="flex items-center gap-3 mb-4 border-b border-gray-800 pb-4">
+                            <div className="flex items-center gap-3 mb-4 border-b border-gray-300 pb-4">
                                 <div className={`w-10 h-10 rounded-full ${isInBlacklist ? 'bg-red-500/20 text-red-500' : isExempt ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-400'} flex items-center justify-center shrink-0`}>
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-bold text-lg">Manage Node Roles</h3>
-                                    <p className="text-gray-400 text-xs">Configure how this address affects risk scoring</p>
+                                    <h3 className="text-gray-900 font-bold text-lg">Manage Node Roles</h3>
+                                    <p className="text-gray-600 text-xs">Configure how this address affects risk scoring</p>
                                 </div>
                             </div>
 
                             {/* Address Display */}
-                            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 mb-6 relative overflow-hidden">
+                            <div className="bg-gray-100/50 border border-gray-200 rounded-lg p-3 mb-6 relative overflow-hidden">
                                 {/* Status Indicator Line */}
                                 <div className={`absolute top-0 left-0 w-1 h-full ${isInBlacklist ? 'bg-red-500' : isExempt ? 'bg-blue-500' : 'bg-transparent'}`}></div>
 
-                                <div className="text-gray-400 text-[10px] tracking-wider mb-1 pl-2">WALLET ADDRESS</div>
-                                <div className="text-white font-mono text-sm break-all pl-2">{selectedNode.id}</div>
+                                <div className="text-gray-600 text-[10px] tracking-wider mb-1 pl-2">WALLET ADDRESS</div>
+                                <div className="text-gray-900 font-mono text-sm break-all pl-2">{selectedNode.id}</div>
                                 {selectedNode.tag && (
                                     <div className="mt-2 text-amber-400 text-xs pl-2">
                                         Known Tag: {selectedNode.tag}
@@ -1571,13 +1571,13 @@ export default function GraphPage() {
 
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 {/* EXEMPT CARD */}
-                                <div className={`border ${isExempt ? 'border-blue-500 bg-blue-500/10' : 'border-gray-800 bg-gray-900/50'} rounded-lg p-4 flex flex-col justify-between transition-colors`}>
+                                <div className={`border ${isExempt ? 'border-blue-500 bg-blue-500/10' : 'border-gray-300 bg-white/50'} rounded-lg p-4 flex flex-col justify-between transition-colors`}>
                                     <div>
                                         <div className="text-blue-400 font-bold mb-1 flex items-center gap-2">
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                                             DApp / Exchange
                                         </div>
-                                        <p className="text-gray-400 text-[10px] mb-4 leading-relaxed">
+                                        <p className="text-gray-600 text-[10px] mb-4 leading-relaxed">
                                             Exempts this high-volume node from triggering <strong>Fan-in/Fan-out</strong> alerts and propagating risk to innocent users.
                                         </p>
                                     </div>
@@ -1591,8 +1591,8 @@ export default function GraphPage() {
                                         }}
                                         disabled={isAddingToExempt || isAddingToBlacklist}
                                         className={`w-full py-1.5 rounded text-xs font-bold transition-colors ${isExempt
-                                                ? 'bg-transparent border border-blue-500 text-blue-400 hover:bg-blue-500/10'
-                                                : 'bg-blue-600 hover:bg-blue-500 text-white'
+                                            ? 'bg-transparent border border-blue-500 text-blue-400 hover:bg-blue-500/10'
+                                            : 'bg-blue-600 hover:bg-blue-500 text-gray-900'
                                             }`}
                                     >
                                         {isAddingToExempt ? 'Saving...' : (isExempt ? 'Remove Exemption' : 'Mark as DApp')}
@@ -1600,13 +1600,13 @@ export default function GraphPage() {
                                 </div>
 
                                 {/* BLACKLIST CARD */}
-                                <div className={`border ${isInBlacklist ? 'border-red-500 bg-red-500/10' : 'border-gray-800 bg-gray-900/50'} rounded-lg p-4 flex flex-col justify-between transition-colors`}>
+                                <div className={`border ${isInBlacklist ? 'border-red-500 bg-red-500/10' : 'border-gray-300 bg-white/50'} rounded-lg p-4 flex flex-col justify-between transition-colors`}>
                                     <div>
                                         <div className="text-red-400 font-bold mb-1 flex items-center gap-2">
                                             <ShieldExclamationIcon />
                                             Blacklist
                                         </div>
-                                        <p className="text-gray-400 text-[10px] mb-4 leading-relaxed">
+                                        <p className="text-gray-600 text-[10px] mb-4 leading-relaxed">
                                             Marks this node as a known threat (100 score). Risk will aggressively propagate to related wallets.
                                         </p>
                                     </div>
@@ -1620,8 +1620,8 @@ export default function GraphPage() {
                                         }}
                                         disabled={isAddingToExempt || isAddingToBlacklist}
                                         className={`w-full py-1.5 rounded text-xs font-bold transition-colors ${isInBlacklist
-                                                ? 'bg-transparent border border-red-500 text-red-400 hover:bg-red-500/10'
-                                                : 'bg-red-600 hover:bg-red-500 text-white'
+                                            ? 'bg-transparent border border-red-500 text-red-400 hover:bg-red-500/10'
+                                            : 'bg-red-600 hover:bg-red-500 text-gray-900'
                                             }`}
                                     >
                                         {isAddingToBlacklist ? 'Saving...' : (isInBlacklist ? 'Remove Blacklist' : 'Add to Blacklist')}
@@ -1630,7 +1630,7 @@ export default function GraphPage() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex justify-end pt-4 border-t border-gray-800">
+                            <div className="flex justify-end pt-4 border-t border-gray-300">
                                 <button
                                     onClick={() => {
                                         setShowBlacklistModal(false);
@@ -1638,7 +1638,7 @@ export default function GraphPage() {
                                         setBlacklistNote('');
                                         setExemptNote('');
                                     }}
-                                    className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                                    className="px-6 py-2 bg-gray-100 hover:bg-gray-700 text-gray-900 rounded-lg text-sm font-medium transition-colors"
                                 >
                                     Close
                                 </button>
@@ -1664,7 +1664,7 @@ function FilterChip({ label, active = false, onClick }: { label: string, active?
             px-3 py-1 rounded-full text-[10px] font-bold tracking-wider cursor-pointer border transition-all duration-300
             ${active
                     ? 'bg-blue-900/30 border-blue-500 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
-                    : 'bg-gray-800/50 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
+                    : 'bg-gray-100/50 border-gray-200 text-gray-600 hover:border-gray-500 hover:text-gray-200'
                 }
         `}>
             {label}
