@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  # 1. เว็บไซต์ Next.js
+  web:
+    build: .
+    container_name: blockchain-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env  # ดึงค่าตัวแปรจากไฟล์ .env มาใช้งาน
+    environment:
+      # บังคับต่อ DB ผ่านชื่อ Container แทน localhost เนื่องจากอยู่ใน Docker ด้วยกัน
+      - NEO4J_URI=bolt://neo4j-db:7687
+    depends_on:
+      - neo4j  # รอให้ Neo4j เปิดเสร็จก่อน ค่อยรันเว็บ
+
+  # 2. ฐานข้อมูล Neo4j
   neo4j:
     image: neo4j:5
     container_name: neo4j-db
@@ -8,7 +23,7 @@ services:
       - "7474:7474" # HTTP Browser
       - "7687:7687" # Bolt Protocol
     environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-password}
       - NEO4J_PLUGINS=["apoc"] # Optional: In case APOC is needed later
     volumes:
       - neo4j_data:/data
