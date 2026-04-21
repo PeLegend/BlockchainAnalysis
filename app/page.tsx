@@ -167,7 +167,7 @@ export default function Home() {
                     </div>
                   </div>
                   <a
-                    href="http://localhost:3000/graph"
+                    href="/graph"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group/link flex items-center justify-center gap-2 w-full py-2.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-lg text-[10px] font-black tracking-widest text-green-400 transition-all"
