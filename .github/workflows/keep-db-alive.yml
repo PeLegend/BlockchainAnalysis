@@ -35,6 +35,10 @@ jobs:
             dns_response="$(curl --ipv4 --fail --silent --show-error --retry 3 --retry-delay 5 --retry-all-errors --max-time 20 \
               --header 'accept: application/dns-json' \
               "${resolver_url}")" || continue
+            resolver_name="${resolver_url%%\?*}"
+            dns_status="$(jq -r '.Status // "invalid"' <<<"${dns_response}" 2>/dev/null || echo invalid)"
+            dns_records="$(jq -r '[.Answer[]? | select(.type == 1)] | length' <<<"${dns_response}" 2>/dev/null || echo 0)"
+            echo "DNS resolver ${resolver_name}: status=${dns_status}, ipv4_records=${dns_records}"
             neo4j_ip="$(jq -r '.Answer[]? | select(.type == 1) | .data' <<<"${dns_response}" | head -n1)"
             [[ -n "${neo4j_ip}" ]] && break
           done
