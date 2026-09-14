@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      NEO4J_URI: ${{ secrets.NEO4J_URI }}
+      NEO4J_HOST: 1fd5add3.databases.neo4j.io
       NEO4J_USER: ${{ secrets.NEO4J_USER }}
       NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
       NEO4J_DATABASE: 1fd5add3
@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          host="${NEO4J_URI#neo4j+s://}"
+          host="${NEO4J_HOST}"
           neo4j_ip=''
           for resolver_url in \
             "https://cloudflare-dns.com/dns-query?name=${host}&type=A" \
