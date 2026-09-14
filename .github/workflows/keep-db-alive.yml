@@ -24,9 +24,9 @@ jobs:
       NEO4J_DATABASE: 860cc17b
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Neo4j driver
         run: npm install --no-save --no-package-lock neo4j-driver@6
@@ -46,20 +46,35 @@ jobs:
             neo4j.auth.basic(NEO4J_USER, NEO4J_PASSWORD),
             { connectionAcquisitionTimeout: 30000 }
           );
-          const session = driver.session({ database: NEO4J_DATABASE });
+          const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const maxAttempts = 6;
 
           (async () => {
+            let lastError;
             try {
-              const result = await session.run('RETURN 1 AS alive');
-              const alive = result.records[0].get('alive').toNumber();
-              if (alive !== 1) throw new Error('Unexpected keep-alive response');
-              console.log('Neo4j keep-alive succeeded');
+              for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+                const session = driver.session({ database: NEO4J_DATABASE });
+                try {
+                  const result = await session.run('RETURN 1 AS alive');
+                  const alive = result.records[0].get('alive').toNumber();
+                  if (alive !== 1) throw new Error('Unexpected keep-alive response');
+                  console.log('Neo4j keep-alive succeeded on attempt ' + attempt);
+                  return;
+                } catch (error) {
+                  lastError = error;
+                  if (attempt === maxAttempts) throw error;
+                  console.warn('Neo4j attempt ' + attempt + ' failed: ' + error.message);
+                  await wait(attempt * 10000);
+                } finally {
+                  await session.close();
+                }
+              }
+              throw lastError;
+            } catch (error) {
+              console.error('Neo4j keep-alive failed: ' + error.message);
+              process.exitCode = 1;
             } finally {
-              await session.close();
               await driver.close();
             }
-          })().catch((error) => {
-            console.error('Neo4j keep-alive failed: ' + error.message);
-            process.exitCode = 1;
-          });
+          })();
           NODE
