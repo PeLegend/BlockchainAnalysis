@@ -21,7 +21,7 @@ jobs:
       NEO4J_URI: ${{ secrets.NEO4J_URI }}
       NEO4J_USER: ${{ secrets.NEO4J_USER }}
       NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
-      NEO4J_DATABASE: 860cc17b
+      NEO4J_DATABASE: 1fd5add3
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -31,7 +31,7 @@ jobs:
       - name: Ping Neo4j over HTTPS
         run: |
           node <<'NODE'
-          const { NEO4J_URI, NEO4J_USER = 'neo4j', NEO4J_PASSWORD, NEO4J_DATABASE = '860cc17b' } = process.env;
+          const { NEO4J_URI, NEO4J_USER = '1fd5add3', NEO4J_PASSWORD, NEO4J_DATABASE = '1fd5add3' } = process.env;
           if (!NEO4J_URI || !NEO4J_PASSWORD) {
             throw new Error('Missing NEO4J_URI or NEO4J_PASSWORD GitHub secret');
           }
