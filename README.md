@@ -43,7 +43,7 @@ Copy-Item env.template .env
 
 - `ALCHEMY_API_URL` : URL ของ Alchemy API
 - `NEO4J_URI` : URI สำหรับเชื่อมต่อ Neo4j
-- `NEO4J_USERNAME` : ชื่อผู้ใช้ Neo4j
+- `NEO4J_USER` : ชื่อผู้ใช้ Neo4j
 - `NEO4J_PASSWORD` : รหัสผ่าน Neo4j
 - `NEO4J_DATABASE` : ชื่อฐานข้อมูล (ปกติคือ `neo4j`)
 
