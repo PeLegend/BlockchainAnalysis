@@ -23,59 +23,19 @@ jobs:
       NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
       NEO4J_DATABASE: 1fd5add3
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-
       - name: Ping Neo4j over HTTPS
+        shell: bash
         run: |
-          node <<'NODE'
-          const { NEO4J_URI, NEO4J_USER = '1fd5add3', NEO4J_PASSWORD, NEO4J_DATABASE = '1fd5add3' } = process.env;
-          if (!NEO4J_URI || !NEO4J_PASSWORD) {
-            throw new Error('Missing NEO4J_URI or NEO4J_PASSWORD GitHub secret');
-          }
-
-          const host = new URL(NEO4J_URI.replace(/^neo4j\+s:/, 'https:')).host;
-          const endpoint = 'https://' + host + '/db/' + encodeURIComponent(NEO4J_DATABASE) + '/query/v2';
-          const authorization = 'Basic ' + Buffer.from(NEO4J_USER + ':' + NEO4J_PASSWORD, 'utf8').toString('base64');
-          const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-          const maxAttempts = 3;
-
-          (async () => {
-            let lastError;
-            try {
-              for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-                try {
-                  const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { authorization, 'content-type': 'application/json' },
-                    body: JSON.stringify({ statement: 'RETURN 1 AS alive' }),
-                    signal: AbortSignal.timeout(30000),
-                  });
-                  const text = await response.text();
-                  let payload;
-                  try {
-                    payload = JSON.parse(text);
-                  } catch {
-                    throw new Error('Neo4j returned a non-JSON response (HTTP ' + response.status + ')');
-                  }
-                  if (!response.ok || (payload.errors && payload.errors.length > 0)) {
-                    throw new Error('Neo4j query failed (HTTP ' + response.status + '): ' + JSON.stringify(payload.errors || payload));
-                  }
-                  console.log('Neo4j keep-alive succeeded on attempt ' + attempt);
-                  return;
-                } catch (error) {
-                  lastError = error;
-                  if (attempt === maxAttempts) throw error;
-                  console.warn('Neo4j attempt ' + attempt + ' failed: ' + error.message);
-                  await wait(attempt * 10000);
-                }
-              }
-              throw lastError;
-            } catch (error) {
-              console.error('Neo4j keep-alive failed: ' + error.message);
-              process.exitCode = 1;
-            }
-          })();
-          NODE
+          set -euo pipefail
+          host="${NEO4J_URI#neo4j+s://}"
+          endpoint="https://${host}/db/${NEO4J_DATABASE}/query/v2"
+          response="$(curl --ipv4 --fail-with-body --silent --show-error --retry 3 --retry-delay 10 --retry-all-errors --max-time 30 \
+            --user "${NEO4J_USER}:${NEO4J_PASSWORD}" \
+            --header 'Content-Type: application/json' \
+            --data '{"statement":"RETURN 1 AS alive"}' \
+            "${endpoint}")"
+          if [[ "${response}" == *'"errors"'* ]]; then
+            echo 'Neo4j query returned errors.' >&2
+            exit 1
+          fi
+          echo 'Neo4j keep-alive succeeded.'
